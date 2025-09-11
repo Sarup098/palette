@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Artevia Cafe</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .kanban-column { min-width: 300px; }
+        .order-card { transition: background-color 0.3s ease; }
+        .order-card.new-order { animation: pulse-bg 2s infinite; }
+        @keyframes pulse-bg {
+            0% { background-color: #fefcbf; } 50% { background-color: #fef9c3; } 100% { background-color: #fefcbf; }
+        }
+    </style>
+</head>
+<body class="bg-gray-200">
+
+    <header class="bg-white shadow-md p-4 flex justify-between items-center">
+        <h1 class="text-3xl font-bold text-yellow-900">Artevia Cafe - Admin Panel</h1>
+        <div>
+            <button id="clear-completed-btn" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg transition">Clear Completed</button>
+        </div>
+    </header>
+
+    <main class="flex overflow-x-auto p-4 space-x-4">
+        <!-- Kanban Columns -->
+        <div data-status="Pending" class="kanban-column bg-gray-100 rounded-lg p-4 flex-shrink-0">
+            <h2 class="text-xl font-bold mb-4 text-red-700">🔴 Pending</h2>
+            <div class="order-list space-y-4 h-full"></div>
+        </div>
+        <div data-status="In Progress" class="kanban-column bg-gray-100 rounded-lg p-4 flex-shrink-0">
+            <h2 class="text-xl font-bold mb-4 text-yellow-700">🟡 In Progress</h2>
+            <div class="order-list space-y-4 h-full"></div>
+        </div>
+        <div data-status="Out for Delivery" class="kanban-column bg-gray-100 rounded-lg p-4 flex-shrink-0">
+            <h2 class="text-xl font-bold mb-4 text-blue-700">🔵 Out for Delivery</h2>
+            <div class="order-list space-y-4 h-full"></div>
+        </div>
+        <div data-status="Completed" class="kanban-column bg-gray-100 rounded-lg p-4 flex-shrink-0">
+            <h2 class="text-xl font-bold mb-4 text-green-700">🟢 Completed</h2>
+            <div class="order-list space-y-4 h-full"></div>
+        </div>
+    </main>
+    
+    <!-- Confirmation Modal -->
+    <div id="confirmation-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50">
+        <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-sm">
+            <h2 class="text-xl font-bold mb-4">Confirm Action</h2>
+            <p id="modal-text">Are you sure?</p>
+            <div class="mt-6 flex justify-end space-x-4">
+                <button id="cancel-btn" class="bg-gray-300 text-gray-800 px-4 py-2 rounded-lg hover:bg-gray-400">Cancel</button>
+                <button id="confirm-btn" class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getFirestore, collection, onSnapshot, doc, updateDoc, writeBatch, query, where, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+
+        // --- Firebase Config ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyCuepnUYt_rDEffSraYycHxYrm5sDlXM6s",
+            authDomain: "palette-orders.firebaseapp.com",
+            projectId: "palette-orders",
+            storageBucket: "palette-orders.appspot.com",
+            messagingSenderId: "424044050877",
+            appId: "1:424044050877:web:2c67d2d065d3411e173ad4",
+            measurementId: "G-M5S8PYDFZ5"
+        };
+        
+        let db;
+        try {
+            const app = initializeApp(firebaseConfig);
+            db = getFirestore(app);
+            const auth = getAuth(app);
+            await signInAnonymously(auth);
+        } catch (error) {
+            console.error("Firebase init failed:", error);
+            document.body.innerHTML = `<div class="p-4 text-red-500 text-center">Could not connect to service.</div>`;
+        }
+
+        const columns = {
+            "Pending": document.querySelector('[data-status="Pending"] .order-list'),
+            "In Progress": document.querySelector('[data-status="In Progress"] .order-list'),
+            "Out for Delivery": document.querySelector('[data-status="Out for Delivery"] .order-list'),
+            "Completed": document.querySelector('[data-status="Completed"] .order-list')
+        };
+        const statuses = Object.keys(columns);
+        let currentOrders = {};
+
+        const renderOrder = (order) => {
+            if (!columns[order.status]) return;
+            
+            const existingCard = document.getElementById(order.id);
+            if(existingCard && existingCard.dataset.status === order.status) {
+                return; // Already in the right column, no need to re-render
+            }
+            if(existingCard) existingCard.remove();
+
+            const card = document.createElement('div');
+            card.id = order.id;
+            card.dataset.status = order.status;
+            card.className = 'order-card bg-white p-4 rounded-lg shadow-sm border-l-4';
+            card.style.borderColor = getStatusColor(order.status);
+
+            const items = JSON.parse(order.items);
+            const itemsHtml = items.map(item => `
+                <li class="flex justify-between">
+                    <span>${item.name} x ${item.quantity}</span>
+                    <span class="font-medium">₹${(item.finalPrice * item.quantity).toFixed(2)}</span>
+                </li>
+            `).join('');
+            
+            const locationInfo = order.orderType === 'dine-in'
+                ? `<div class="flex items-center text-blue-800"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor"><path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z" /></svg>Table: <span class="font-bold ml-1">${order.tableNumber}</span></div>`
+                : `<div class="flex items-center text-green-800"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.022 3.222a1 1 0 011.395-.22l1.415.707a1 1 0 001.395-.22l1.414-.707a1 1 0 011.395.22l1.414.707a1 1 0 001.395-.22l.707-.353a1 1 0 011.33.208l1.435 2.153a1 1 0 01-.157 1.358l-1.12 1.12a1 1 0 00-.22 1.395l.707 1.414a1 1 0 01-.22 1.395l-.707 1.414a1 1 0 00.22 1.395l1.12 1.12a1 1 0 01.157 1.358l-1.435 2.153a1 1 0 01-1.33.208l-.707-.353a1 1 0 00-1.395-.22l-1.414.707a1 1 0 01-1.395-.22l-1.414-.707a1 1 0 00-1.395.22l-1.415.707a1 1 0 01-1.395-.22L3 16.978V3.022a1 1 0 01.95-.978-5.022 5.022 0 011.072.178zM4 6a2 2 0 100 4 2 2 0 000-4z" clip-rule="evenodd" /></svg>Delivery</div>`;
+            
+            const nextStatus = getNextStatus(order.status);
+            const actionButtonHtml = nextStatus
+                ? `<button data-id="${order.id}" data-next-status="${nextStatus}" class="move-order-btn mt-4 w-full text-white font-bold py-2 px-4 rounded-lg transition">${getActionText(nextStatus)}</button>`
+                : `<button data-id="${order.id}" data-number="${order.whatsappNumber}" data-name="${order.customerName}" data-items='${JSON.stringify(items)}' data-total="${order.totalAmount}" class="send-bill-btn mt-4 w-full bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-lg transition">Send Bill</button>`;
+
+            card.innerHTML = `
+                <div class="flex justify-between items-start">
+                    <div>
+                        <p class="font-bold text-lg">${order.customerName}</p>
+                        <p class="text-sm text-gray-600">${new Date(order.timestamp.seconds * 1000).toLocaleTimeString()}</p>
+                        ${locationInfo}
+                    </div>
+                    <span class="font-extrabold text-xl">₹${order.totalAmount.toFixed(2)}</span>
+                </div>
+                <ul class="mt-2 border-t pt-2 text-sm space-y-1">${itemsHtml}</ul>
+                ${actionButtonHtml}
+            `;
+
+            if(order.status === 'Pending' && !currentOrders[order.id]) {
+                 card.classList.add('new-order');
+                 setTimeout(() => card.classList.remove('new-order'), 5000);
+            }
+
+            columns[order.status].prepend(card);
+            currentOrders[order.id] = order.status;
+        };
+
+        const listenToOrders = () => {
+            const ordersQuery = query(collection(db, 'orders'));
+            onSnapshot(ordersQuery, snapshot => {
+                snapshot.docChanges().forEach(change => {
+                    const order = { id: change.doc.id, ...change.doc.data() };
+                    if (change.type === 'removed') {
+                        const card = document.getElementById(order.id);
+                        if (card) card.remove();
+                        delete currentOrders[order.id];
+                    } else {
+                        renderOrder(order);
+                    }
+                });
+            }, (error) => {
+                console.error("Error listening to orders:", error);
+            });
+        };
+
+        const getStatusColor = (status) => ({
+            "Pending": "#ef4444", "In Progress": "#f59e0b", "Out for Delivery": "#3b82f6", "Completed": "#22c55e"
+        }[status]);
+
+        const getNextStatus = (currentStatus) => statuses[statuses.indexOf(currentStatus) + 1] || null;
+
+        const getActionText = (nextStatus) => {
+            if(nextStatus === 'In Progress') return `<span class="bg-yellow-500 hover:bg-yellow-600 w-full block py-2 px-4">Start Preparing</span>`;
+            if(nextStatus === 'Out for Delivery') return `<span class="bg-blue-500 hover:bg-blue-600 w-full block py-2 px-4">Out for Delivery</span>`;
+            if(nextStatus === 'Completed') return `<span class="bg-green-500 hover:bg-green-600 w-full block py-2 px-4">Mark Completed</span>`;
+            return '';
+        };
+        
+        const updateOrderStatus = async (orderId, newStatus) => {
+            const orderRef = doc(db, 'orders', orderId);
+            try {
+                await updateDoc(orderRef, { status: newStatus });
+            } catch (error) {
+                console.error("Error updating order status:", error);
+            }
+        };
+        
+        const sendBill = (e) => {
+            const { number, name, items, total } = e.target.closest('button').dataset;
+            const parsedItems = JSON.parse(items);
+            let billText = `Hello ${name}!\n\nThank you for your order from Artevia Cafe.\nHere is your bill:\n\n`;
+            parsedItems.forEach(item => {
+                billText += `${item.name} x ${item.quantity} - ₹${(item.finalPrice * item.quantity).toFixed(2)}\n`;
+            });
+            billText += `\n*Total Amount: ₹${parseFloat(total).toFixed(2)}*\n\nWe hope you enjoyed your meal!`;
+            const whatsappUrl = `https://wa.me/91${number}?text=${encodeURIComponent(billText)}`;
+            window.open(whatsappUrl, '_blank');
+        };
+        
+        const showConfirmation = (text, onConfirm) => {
+            const modal = document.getElementById('confirmation-modal');
+            document.getElementById('modal-text').textContent = text;
+            
+            const confirmBtn = document.getElementById('confirm-btn');
+            const cancelBtn = document.getElementById('cancel-btn');
+
+            const confirmHandler = () => {
+                onConfirm();
+                modal.classList.add('hidden');
+                cleanup();
+            };
+            const cancelHandler = () => {
+                modal.classList.add('hidden');
+                cleanup();
+            };
+            
+            const cleanup = () => {
+                confirmBtn.removeEventListener('click', confirmHandler);
+                cancelBtn.removeEventListener('click', cancelHandler);
+            };
+
+            confirmBtn.addEventListener('click', confirmHandler);
+            cancelBtn.addEventListener('click', cancelHandler);
+            
+            modal.classList.remove('hidden');
+        };
+
+        const clearCompletedOrders = async () => {
+            const q = query(collection(db, 'orders'), where("status", "==", "Completed"));
+            try {
+                const querySnapshot = await getDocs(q);
+                if(querySnapshot.empty) {
+                    alert("No completed orders to clear.");
+                    return;
+                }
+                const batch = writeBatch(db);
+                querySnapshot.forEach(doc => batch.delete(doc.ref));
+                await batch.commit();
+            } catch (error) {
+                console.error("Error clearing completed orders:", error);
+            }
+        };
+
+        document.querySelector('main').addEventListener('click', e => {
+            const moveBtn = e.target.closest('.move-order-btn');
+            const billBtn = e.target.closest('.send-bill-btn');
+            if (moveBtn) updateOrderStatus(moveBtn.dataset.id, moveBtn.dataset.nextStatus);
+            if (billBtn) sendBill(e);
+        });
+        
+        document.getElementById('clear-completed-btn').addEventListener('click', () => {
+            showConfirmation('Are you sure you want to delete ALL completed orders? This cannot be undone.', clearCompletedOrders);
+        });
+
+        listenToOrders();
+    </script>
+</body>
+</html>
+
