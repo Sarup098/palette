@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Setup Cafe Tables</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen">
+    <div class="bg-white p-8 rounded-xl shadow-lg w-full max-w-md text-center">
+        <h1 class="text-3xl font-bold text-yellow-900 mb-6">Set Up Cafe Tables</h1>
+        <p class="text-gray-600 mb-6">Define your cafe's table layout. This will delete any existing table data and create a fresh setup.</p>
+        
+        <div class="space-y-4 text-left">
+            <div>
+                <label for="six-seater" class="block text-sm font-medium text-gray-700">Six-Seater Tables (Capacity: 6)</label>
+                <input type="number" id="six-seater" value="1" min="0" class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-yellow-800 focus:border-yellow-800">
+            </div>
+            <div>
+                <label for="four-seater" class="block text-sm font-medium text-gray-700">Four-Seater Tables (Capacity: 4)</label>
+                <input type="number" id="four-seater" value="6" min="0" class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-yellow-800 focus:border-yellow-800">
+            </div>
+            <div>
+                <label for="two-seater" class="block text-sm font-medium text-gray-700">Two-Seater Tables (Capacity: 2)</label>
+                <input type="number" id="two-seater" value="1" min="0" class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-yellow-800 focus:border-yellow-800">
+            </div>
+        </div>
+        
+        <button id="setup-btn" class="w-full bg-green-600 text-white py-3 rounded-lg mt-8 font-semibold hover:bg-green-700 transition transform hover:scale-105">
+            Initialize Tables
+        </button>
+
+        <div id="log-container" class="mt-6 p-4 bg-gray-50 rounded-lg text-left text-sm text-gray-700 h-40 overflow-y-auto hidden border">
+            <p class="font-semibold mb-2">Setup Log:</p>
+            <div id="log"></div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getFirestore, collection, writeBatch, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCuepnUYt_rDEffSraYycHxYrm5sDlXM6s",
+            authDomain: "palette-orders.firebaseapp.com",
+            projectId: "palette-orders",
+            storageBucket: "palette-orders.firebasestorage.app",
+            messagingSenderId: "424044050877",
+            appId: "1:424044050877:web:2c67d2d065d3411e173ad4",
+            measurementId: "G-M5S8PYDFZ5"
+        };
+        
+        let db;
+        try {
+            const app = initializeApp(firebaseConfig);
+            db = getFirestore(app);
+            const auth = getAuth(app);
+            await signInAnonymously(auth);
+        } catch(e) {
+            console.error(e);
+            alert("Could not connect to Firebase. Check console.");
+        }
+
+        const setupBtn = document.getElementById('setup-btn');
+        const logContainer = document.getElementById('log-container');
+        const logEl = document.getElementById('log');
+
+        const logMessage = (message, isError = false) => {
+            const p = document.createElement('p');
+            p.textContent = message;
+            p.className = isError ? 'text-red-500' : 'text-green-600';
+            logEl.appendChild(p);
+            logContainer.scrollTop = logContainer.scrollHeight;
+        };
+
+        const setupTables = async () => {
+            setupBtn.disabled = true;
+            setupBtn.textContent = 'Processing...';
+            logContainer.classList.remove('hidden');
+            logEl.innerHTML = '';
+
+            const tablesColRef = collection(db, 'tables');
+
+            try {
+                logMessage('Starting setup...');
+                
+                // 1. Delete existing tables
+                logMessage('Clearing old table data...');
+                const oldTablesSnapshot = await getDocs(tablesColRef);
+                const deleteBatch = writeBatch(db);
+                oldTablesSnapshot.forEach(doc => deleteBatch.delete(doc.ref));
+                await deleteBatch.commit();
+                logMessage('Old data cleared.');
+
+                // 2. Create new tables
+                logMessage('Creating new tables...');
+                const sixSeaters = parseInt(document.getElementById('six-seater').value, 10);
+                const fourSeaters = parseInt(document.getElementById('four-seater').value, 10);
+                const twoSeaters = parseInt(document.getElementById('two-seater').value, 10);
+
+                let tableCounter = 1;
+                const createBatch = writeBatch(db);
+
+                const createTableEntries = (count, capacity) => {
+                    for (let i = 0; i < count; i++) {
+                        const tableId = tableCounter.toString();
+                        const tableRef = doc(db, 'tables', tableId);
+                        createBatch.set(tableRef, {
+                            tableNumber: tableCounter,
+                            capacity: capacity,
+                            status: 'Available',
+                            orderId: null,
+                            availableTime: null // Initialize new field
+                        });
+                        logMessage(`  - Created Table ${tableId} (Capacity: ${capacity})`);
+                        tableCounter++;
+                    }
+                };
+                
+                createTableEntries(sixSeaters, 6);
+                createTableEntries(fourSeaters, 4);
+                createTableEntries(twoSeaters, 2);
+
+                await createBatch.commit();
+                logMessage('All new tables created successfully!');
+                logMessage('Setup complete.', false);
+
+            } catch (error) {
+                console.error("Error setting up tables:", error);
+                logMessage(`Error: ${error.message}`, true);
+            } finally {
+                setupBtn.disabled = false;
+                setupBtn.textContent = 'Initialize Tables';
+            }
+        };
+
+        setupBtn.addEventListener('click', setupTables);
+    </script>
+</body>
+</html>
+
