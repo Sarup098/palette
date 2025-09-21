@@ -3,259 +3,449 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin - Artevia Cafe</title>
+    <title>Admin Dashboard - Palette Cafe</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Inter', sans-serif; }
-        .kanban-column { min-width: 300px; }
-        .order-card { transition: background-color 0.3s ease; }
-        .order-card.new-order { animation: pulse-bg 2s infinite; }
-        @keyframes pulse-bg {
-            0% { background-color: #fefcbf; } 50% { background-color: #fef9c3; } 100% { background-color: #fefcbf; }
+        .kanban-column {
+            scroll-snap-align: start;
+        }
+        .kanban-container {
+            scroll-snap-type: x mandatory;
+        }
+        .animate-flash-red {
+            animation: flash-red 1s infinite;
+        }
+        @keyframes flash-red {
+            0%, 100% { border-color: #ef4444; }
+            50% { border-color: transparent; }
         }
     </style>
 </head>
-<body class="bg-gray-200">
-
-    <header class="bg-white shadow-md p-4 flex justify-between items-center">
-        <h1 class="text-3xl font-bold text-yellow-900">Artevia Cafe - Admin Panel</h1>
-        <div>
-            <button id="clear-completed-btn" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg transition">Clear Completed</button>
+<body class="bg-gray-100 font-sans">
+    
+    <!-- Header -->
+    <header class="bg-white shadow-sm sticky top-0 z-20">
+        <div class="container mx-auto px-4 py-3">
+            <h1 class="text-2xl font-bold text-gray-800">Cafe Admin Dashboard</h1>
         </div>
     </header>
 
-    <main class="flex overflow-x-auto p-4 space-x-4">
-        <!-- Kanban Columns -->
-        <div data-status="Pending" class="kanban-column bg-gray-100 rounded-lg p-4 flex-shrink-0">
-            <h2 class="text-xl font-bold mb-4 text-red-700">🔴 Pending</h2>
-            <div class="order-list space-y-4 h-full"></div>
-        </div>
-        <div data-status="In Progress" class="kanban-column bg-gray-100 rounded-lg p-4 flex-shrink-0">
-            <h2 class="text-xl font-bold mb-4 text-yellow-700">🟡 In Progress</h2>
-            <div class="order-list space-y-4 h-full"></div>
-        </div>
-        <div data-status="Out for Delivery" class="kanban-column bg-gray-100 rounded-lg p-4 flex-shrink-0">
-            <h2 class="text-xl font-bold mb-4 text-blue-700">🔵 Out for Delivery</h2>
-            <div class="order-list space-y-4 h-full"></div>
-        </div>
-        <div data-status="Completed" class="kanban-column bg-gray-100 rounded-lg p-4 flex-shrink-0">
-            <h2 class="text-xl font-bold mb-4 text-green-700">🟢 Completed</h2>
-            <div class="order-list space-y-4 h-full"></div>
-        </div>
-    </main>
-    
-    <!-- Confirmation Modal -->
-    <div id="confirmation-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50">
-        <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-sm">
-            <h2 class="text-xl font-bold mb-4">Confirm Action</h2>
-            <p id="modal-text">Are you sure?</p>
-            <div class="mt-6 flex justify-end space-x-4">
-                <button id="cancel-btn" class="bg-gray-300 text-gray-800 px-4 py-2 rounded-lg hover:bg-gray-400">Cancel</button>
-                <button id="confirm-btn" class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700">Confirm</button>
+    <!-- Main Content -->
+    <main class="container mx-auto p-4">
+
+        <!-- Daily Summary -->
+        <section id="daily-summary" class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+            <div class="bg-white p-4 rounded-lg shadow text-center"><p class="text-sm text-gray-500">Total Orders</p><p id="total-orders" class="text-2xl font-bold">0</p></div>
+            <div class="bg-white p-4 rounded-lg shadow text-center"><p class="text-sm text-gray-500">Total Revenue</p><p id="total-revenue" class="text-2xl font-bold">₹0</p></div>
+            <div class="bg-white p-4 rounded-lg shadow text-center"><p class="text-sm text-gray-500">Total Paid</p><p id="total-paid" class="text-2xl font-bold text-green-600">₹0</p></div>
+            <div class="bg-white p-4 rounded-lg shadow text-center"><p class="text-sm text-gray-500">Total Unpaid</p><p id="total-unpaid" class="text-2xl font-bold text-red-600">₹0</p></div>
+        </section>
+        
+        <!-- Table Management -->
+        <section class="mb-8">
+            <h2 class="text-xl font-semibold mb-4 text-gray-700">Table Management</h2>
+            <div id="admin-table-grid" class="grid grid-cols-3 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8 gap-4">
+                <!-- Admin table view will be injected here -->
             </div>
+        </section>
+
+        <!-- Order Tracker -->
+        <section>
+             <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-semibold text-gray-700">Live Order Tracker</h2>
+                <div>
+                     <button id="view-log-btn" class="bg-gray-600 text-white px-4 py-2 rounded-md text-sm hover:bg-gray-700 mr-2">Today's Full Log</button>
+                    <button id="archive-btn" class="bg-blue-600 text-white px-4 py-2 rounded-md text-sm hover:bg-blue-700">Archive Paid Orders</button>
+                </div>
+            </div>
+            <div class="kanban-container flex overflow-x-auto gap-4 pb-4">
+                <!-- Kanban Columns -->
+                <div id="col-Pending" class="kanban-column bg-white rounded-lg shadow p-3 w-72 sm:w-80 flex-shrink-0"><h3 class="font-bold mb-3 text-red-600">Pending</h3><div class="order-list space-y-3"></div></div>
+                <div id="col-InProgress" class="kanban-column bg-white rounded-lg shadow p-3 w-72 sm:w-80 flex-shrink-0"><h3 class="font-bold mb-3 text-yellow-600">In Progress</h3><div class="order-list space-y-3"></div></div>
+                <div id="col-Ready" class="kanban-column bg-white rounded-lg shadow p-3 w-72 sm:w-80 flex-shrink-0"><h3 class="font-bold mb-3 text-blue-600">Ready</h3><div class="order-list space-y-3"></div></div>
+                <div id="col-OutforDelivery" class="kanban-column bg-white rounded-lg shadow p-3 w-72 sm:w-80 flex-shrink-0"><h3 class="font-bold mb-3 text-purple-600">Out for Delivery</h3><div class="order-list space-y-3"></div></div>
+                <div id="col-Completed" class="kanban-column bg-white rounded-lg shadow p-3 w-72 sm:w-80 flex-shrink-0"><h3 class="font-bold mb-3 text-green-600">Completed</h3><div class="order-list space-y-3"></div></div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Modals -->
+    <div id="modal-backdrop" class="fixed inset-0 bg-black bg-opacity-50 z-30 hidden"></div>
+    
+    <!-- Table Management Modal -->
+    <div id="table-modal" class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-lg shadow-xl z-40 w-full max-w-md hidden p-6">
+        <h3 id="table-modal-title" class="text-2xl font-bold mb-4">Manage Table T1</h3>
+        <!-- Content injected by JS -->
+    </div>
+    
+     <!-- Full Log Modal -->
+    <div id="log-modal" class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-lg shadow-xl z-40 w-full max-w-2xl hidden flex-col">
+        <div class="p-4 border-b flex justify-between items-center">
+             <h3 class="text-xl font-bold">Today's Full Order Log</h3>
+            <button id="close-log-btn" class="text-gray-500 hover:text-gray-800">&times;</button>
+        </div>
+        <div id="log-content" class="p-4 max-h-[70vh] overflow-y-auto">
+            <!-- Log content injected here -->
         </div>
     </div>
 
 
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getFirestore, collection, onSnapshot, doc, updateDoc, writeBatch, query, where, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-        import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-app.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-auth.js";
+        import { getFirestore, collection, onSnapshot, doc, updateDoc, writeBatch, query, where, Timestamp, getDocs } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-firestore.js";
 
-        // --- Firebase Config ---
         const firebaseConfig = {
             apiKey: "AIzaSyCuepnUYt_rDEffSraYycHxYrm5sDlXM6s",
             authDomain: "palette-orders.firebaseapp.com",
             projectId: "palette-orders",
-            storageBucket: "palette-orders.appspot.com",
+            storageBucket: "palette-orders.firebasestorage.app",
             messagingSenderId: "424044050877",
-            appId: "1:424044050877:web:2c67d2d065d3411e173ad4",
-            measurementId: "G-M5S8PYDFZ5"
+            appId: "1:424044050877:web:9ea875314de19b70173ad4",
+            measurementId: "G-XNVCLD42Y4"
         };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
         
-        let db;
-        try {
-            const app = initializeApp(firebaseConfig);
-            db = getFirestore(app);
-            const auth = getAuth(app);
-            await signInAnonymously(auth);
-        } catch (error) {
-            console.error("Firebase init failed:", error);
-            document.body.innerHTML = `<div class="p-4 text-red-500 text-center">Could not connect to service.</div>`;
+        let allTodayOrders = []; // To store all orders for the log, including archived
+        const ORDER_STATUSES = ['Pending', 'In Progress', 'Ready', 'Out for Delivery', 'Completed'];
+
+        // --- AUTHENTICATION & INITIALIZATION ---
+        // Use onAuthStateChanged to ensure we only attach listeners after successful authentication.
+        // This prevents the "permission-denied" error on initial load.
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                // User is signed in anonymously. Now it's safe to fetch data.
+                console.log("Admin authenticated with UID:", user.uid);
+                listenForTables();
+                listenForOrders();
+                setInterval(updateTimers, 10000);
+            } else {
+                console.log("Admin is not authenticated.");
+            }
+        });
+
+        // Trigger the anonymous sign-in process.
+        signInAnonymously(auth).catch(error => {
+            console.error("Anonymous sign-in failed:", error);
+            alert("Could not connect to the server. Please check your internet connection and refresh the page.");
+        });
+
+        function listenForTables() {
+            onSnapshot(collection(db, 'tables'), (snapshot) => {
+                const tableGrid = document.getElementById('admin-table-grid');
+                tableGrid.innerHTML = '';
+                 const tables = [];
+                snapshot.forEach(doc => tables.push({id: doc.id, ...doc.data()}));
+                // FIX: Made sorting more robust to handle missing or malformed tableNumber field.
+                tables.sort((a, b) => {
+                    const numA = (a.tableNumber && typeof a.tableNumber === 'string') ? parseInt(a.tableNumber.slice(1)) : 0;
+                    const numB = (b.tableNumber && typeof b.tableNumber === 'string') ? parseInt(b.tableNumber.slice(1)) : 0;
+                    return numA - numB;
+                });
+
+                tables.forEach(table => {
+                    const tableEl = document.createElement('button');
+                    let bgColor = 'bg-gray-200';
+                    let statusText = table.status;
+                    let countdownText = '';
+                    
+                    if (table.needsWater || table.needsHelp) {
+                        tableEl.classList.add('animate-flash-red', 'border-2');
+                    }
+
+                    switch(table.status) {
+                        case 'Available': bgColor = 'bg-green-200'; break;
+                        case 'Occupied': bgColor = 'bg-yellow-200'; break;
+                        case 'Cleaning':
+                            bgColor = 'bg-blue-200';
+                            if (table.cleaningUntil) {
+                                const cleanIn = Math.round((table.cleaningUntil.toDate() - new Date()) / 1000);
+                                if (cleanIn > 0) countdownText = `<div class="text-xs">${cleanIn}s left</div>`;
+                                else statusText = 'Available'; // Auto-switch if timer expired
+                            }
+                            break;
+                        case 'Blocked': bgColor = 'bg-red-200'; break;
+                    }
+                    
+                    tableEl.className = `p-2 rounded-lg text-center transition ${bgColor}`;
+                    tableEl.innerHTML = `
+                        <div class="font-bold">${table.tableNumber || 'N/A'}</div>
+                        <div class="text-sm">${statusText}</div>
+                        ${countdownText}
+                    `;
+                    tableEl.onclick = () => openTableModal(table);
+                    tableGrid.appendChild(tableEl);
+                });
+            });
         }
+        
+        function listenForOrders() {
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const startOfToday = Timestamp.fromDate(today);
 
-        const columns = {
-            "Pending": document.querySelector('[data-status="Pending"] .order-list'),
-            "In Progress": document.querySelector('[data-status="In Progress"] .order-list'),
-            "Out for Delivery": document.querySelector('[data-status="Out for Delivery"] .order-list'),
-            "Completed": document.querySelector('[data-status="Completed"] .order-list')
-        };
-        const statuses = Object.keys(columns);
-        let currentOrders = {};
-
-        const renderOrder = (order) => {
-            if (!columns[order.status]) return;
+            const q = query(collection(db, 'orders'), where('createdAt', '>=', startOfToday));
             
-            const existingCard = document.getElementById(order.id);
-            if(existingCard && existingCard.dataset.status === order.status) {
-                return; // Already in the right column, no need to re-render
-            }
-            if(existingCard) existingCard.remove();
+            onSnapshot(q, (snapshot) => {
+                allTodayOrders = [];
+                const activeOrders = [];
+                let totalOrders = 0, totalRevenue = 0, totalPaid = 0, totalUnpaid = 0;
 
-            const card = document.createElement('div');
-            card.id = order.id;
-            card.dataset.status = order.status;
-            card.className = 'order-card bg-white p-4 rounded-lg shadow-sm border-l-4';
-            card.style.borderColor = getStatusColor(order.status);
-
-            const items = JSON.parse(order.items);
-            const itemsHtml = items.map(item => `
-                <li class="flex justify-between">
-                    <span>${item.name} x ${item.quantity}</span>
-                    <span class="font-medium">₹${(item.finalPrice * item.quantity).toFixed(2)}</span>
-                </li>
-            `).join('');
-            
-            const locationInfo = order.orderType === 'dine-in'
-                ? `<div class="flex items-center text-blue-800"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor"><path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z" /></svg>Table: <span class="font-bold ml-1">${order.tableNumber}</span></div>`
-                : `<div class="flex items-center text-green-800"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.022 3.222a1 1 0 011.395-.22l1.415.707a1 1 0 001.395-.22l1.414-.707a1 1 0 011.395.22l1.414.707a1 1 0 001.395-.22l.707-.353a1 1 0 011.33.208l1.435 2.153a1 1 0 01-.157 1.358l-1.12 1.12a1 1 0 00-.22 1.395l.707 1.414a1 1 0 01-.22 1.395l-.707 1.414a1 1 0 00.22 1.395l1.12 1.12a1 1 0 01.157 1.358l-1.435 2.153a1 1 0 01-1.33.208l-.707-.353a1 1 0 00-1.395-.22l-1.414.707a1 1 0 01-1.395-.22l-1.414-.707a1 1 0 00-1.395.22l-1.415.707a1 1 0 01-1.395-.22L3 16.978V3.022a1 1 0 01.95-.978-5.022 5.022 0 011.072.178zM4 6a2 2 0 100 4 2 2 0 000-4z" clip-rule="evenodd" /></svg>Delivery</div>`;
-            
-            const nextStatus = getNextStatus(order.status);
-            const actionButtonHtml = nextStatus
-                ? `<button data-id="${order.id}" data-next-status="${nextStatus}" class="move-order-btn mt-4 w-full text-white font-bold py-2 px-4 rounded-lg transition">${getActionText(nextStatus)}</button>`
-                : `<button data-id="${order.id}" data-number="${order.whatsappNumber}" data-name="${order.customerName}" data-items='${JSON.stringify(items)}' data-total="${order.totalAmount}" class="send-bill-btn mt-4 w-full bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-lg transition">Send Bill</button>`;
-
-            card.innerHTML = `
-                <div class="flex justify-between items-start">
-                    <div>
-                        <p class="font-bold text-lg">${order.customerName}</p>
-                        <p class="text-sm text-gray-600">${new Date(order.timestamp.seconds * 1000).toLocaleTimeString()}</p>
-                        ${locationInfo}
-                    </div>
-                    <span class="font-extrabold text-xl">₹${order.totalAmount.toFixed(2)}</span>
-                </div>
-                <ul class="mt-2 border-t pt-2 text-sm space-y-1">${itemsHtml}</ul>
-                ${actionButtonHtml}
-            `;
-
-            if(order.status === 'Pending' && !currentOrders[order.id]) {
-                 card.classList.add('new-order');
-                 setTimeout(() => card.classList.remove('new-order'), 5000);
-            }
-
-            columns[order.status].prepend(card);
-            currentOrders[order.id] = order.status;
-        };
-
-        const listenToOrders = () => {
-            const ordersQuery = query(collection(db, 'orders'));
-            onSnapshot(ordersQuery, snapshot => {
-                snapshot.docChanges().forEach(change => {
-                    const order = { id: change.doc.id, ...change.doc.data() };
-                    if (change.type === 'removed') {
-                        const card = document.getElementById(order.id);
-                        if (card) card.remove();
-                        delete currentOrders[order.id];
+                snapshot.forEach(doc => {
+                    const order = { id: doc.id, ...doc.data() };
+                    allTodayOrders.push(order);
+                    
+                    totalOrders++;
+                    totalRevenue += order.totalAmount;
+                    if (order.paymentStatus === 'Paid') {
+                        totalPaid += order.totalAmount;
                     } else {
-                        renderOrder(order);
+                        totalUnpaid += order.totalAmount;
+                    }
+
+                    if (!order.isHidden) {
+                        activeOrders.push(order);
                     }
                 });
-            }, (error) => {
-                console.error("Error listening to orders:", error);
+                
+                // Update summary stats
+                document.getElementById('total-orders').textContent = totalOrders;
+                document.getElementById('total-revenue').textContent = `₹${totalRevenue.toFixed(0)}`;
+                document.getElementById('total-paid').textContent = `₹${totalPaid.toFixed(0)}`;
+                document.getElementById('total-unpaid').textContent = `₹${totalUnpaid.toFixed(0)}`;
+                
+                renderKanban(activeOrders);
             });
-        };
+        }
+        
+        function renderKanban(orders) {
+            // Clear all columns first
+            ORDER_STATUSES.forEach(status => {
+                const col = document.getElementById(`col-${status.replace(/ /g, '')}`);
+                if(col) col.querySelector('.order-list').innerHTML = '';
+            });
+            
+            orders.sort((a, b) => a.createdAt.toDate() - b.createdAt.toDate());
 
-        const getStatusColor = (status) => ({
-            "Pending": "#ef4444", "In Progress": "#f59e0b", "Out for Delivery": "#3b82f6", "Completed": "#22c55e"
-        }[status]);
+            orders.forEach(order => {
+                const col = document.getElementById(`col-${order.status.replace(/ /g, '')}`);
+                if (!col) return;
 
-        const getNextStatus = (currentStatus) => statuses[statuses.indexOf(currentStatus) + 1] || null;
+                const card = document.createElement('div');
+                card.className = 'p-3 bg-gray-50 rounded-md border border-gray-200';
+                card.dataset.id = order.id;
 
-        const getActionText = (nextStatus) => {
-            if(nextStatus === 'In Progress') return `<span class="bg-yellow-500 hover:bg-yellow-600 w-full block py-2 px-4">Start Preparing</span>`;
-            if(nextStatus === 'Out for Delivery') return `<span class="bg-blue-500 hover:bg-blue-600 w-full block py-2 px-4">Out for Delivery</span>`;
-            if(nextStatus === 'Completed') return `<span class="bg-green-500 hover:bg-green-600 w-full block py-2 px-4">Mark Completed</span>`;
+                const paymentClass = order.paymentStatus === 'Paid' ? 'text-green-600' : 'text-red-600';
+                const paymentBg = order.paymentStatus === 'Paid' ? 'bg-green-100' : 'bg-red-100';
+
+                card.innerHTML = `
+                    <p class="font-bold">${order.customerName} (${order.whatsappNumber})</p>
+                    <p class="text-sm text-gray-500">${order.orderType} ${order.tableId || ''}</p>
+                    <p class="font-semibold my-1">₹${order.totalAmount.toFixed(0)}</p>
+                    <div class="text-xs my-2">
+                        ${Object.values(JSON.parse(order.items)).map(i => `${i.quantity}x ${i.name}`).join(', ')}
+                    </div>
+                    <div class="flex justify-between items-center mt-2 text-xs">
+                        <button class="payment-toggle-btn ${paymentBg} ${paymentClass} px-2 py-1 rounded-full font-semibold" data-id="${order.id}" data-current="${order.paymentStatus}">
+                            ${order.paymentStatus}
+                        </button>
+                        ${renderNextStepButton(order)}
+                    </div>
+                `;
+                col.querySelector('.order-list').appendChild(card);
+            });
+            
+            // Attach listeners after render
+            document.querySelectorAll('.payment-toggle-btn').forEach(b => b.onclick = togglePaymentStatus);
+            document.querySelectorAll('.next-step-btn').forEach(b => b.onclick = advanceOrderStatus);
+        }
+
+        function renderNextStepButton(order) {
+            const currentIdx = ORDER_STATUSES.indexOf(order.status);
+            if (currentIdx < ORDER_STATUSES.length - 1) {
+                const nextStatus = ORDER_STATUSES[currentIdx + 1];
+                return `<button class="next-step-btn bg-gray-700 text-white px-3 py-1 rounded hover:bg-gray-800" data-id="${order.id}" data-next-status="${nextStatus}">
+                    &rarr; ${nextStatus}
+                </button>`;
+            }
             return '';
-        };
+        }
+
+        // --- ACTIONS ---
+        async function togglePaymentStatus(e) {
+            const { id, current } = e.target.dataset;
+            const newStatus = current === 'Paid' ? 'Unpaid' : 'Paid';
+            await updateDoc(doc(db, 'orders', id), { paymentStatus: newStatus });
+        }
         
-        const updateOrderStatus = async (orderId, newStatus) => {
-            const orderRef = doc(db, 'orders', orderId);
-            try {
-                await updateDoc(orderRef, { status: newStatus });
-            } catch (error) {
-                console.error("Error updating order status:", error);
+        async function advanceOrderStatus(e) {
+            const { id, nextStatus } = e.target.dataset;
+            await updateDoc(doc(db, 'orders', id), { status: nextStatus });
+        }
+
+        // --- TABLE MODAL LOGIC ---
+        const modalBackdrop = document.getElementById('modal-backdrop');
+        const tableModal = document.getElementById('table-modal');
+
+        function openTableModal(table) {
+            document.getElementById('table-modal-title').textContent = `Manage Table ${table.tableNumber}`;
+            
+            let helpRequestsHtml = '';
+            if (table.needsWater) {
+                helpRequestsHtml += `<button data-type="needsWater" class="resolve-btn w-full text-left bg-yellow-100 text-yellow-800 p-2 rounded mb-2 hover:bg-yellow-200">Resolve Water Request</button>`;
             }
-        };
+            if (table.needsHelp) {
+                helpRequestsHtml += `<button data-type="needsHelp" class="resolve-btn w-full text-left bg-yellow-100 text-yellow-800 p-2 rounded mb-2 hover:bg-yellow-200">Resolve Help Request</button>`;
+            }
+            
+            tableModal.innerHTML = `
+                <h3 class="text-2xl font-bold mb-4">Manage Table ${table.tableNumber}</h3>
+                ${helpRequestsHtml}
+                <div class="mb-4">
+                    <p class="font-semibold mb-2">Change Status:</p>
+                    <div class="grid grid-cols-2 gap-2">
+                        ${['Available', 'Occupied', 'Blocked'].map(status => `<button data-status="${status}" class="status-change-btn p-2 rounded ${table.status === status ? 'bg-indigo-600 text-white' : 'bg-gray-200'}">${status}</button>`).join('')}
+                    </div>
+                </div>
+                <div class="mb-4">
+                    <p class="font-semibold mb-2">Set estimated availability time (for Occupied tables):</p>
+                     <div class="grid grid-cols-3 gap-2">
+                        <button data-mins="10" class="time-set-btn p-2 bg-gray-200 rounded">10 min</button>
+                        <button data-mins="20" class="time-set-btn p-2 bg-gray-200 rounded">20 min</button>
+                        <button data-mins="30" class="time-set-btn p-2 bg-gray-200 rounded">30 min</button>
+                    </div>
+                </div>
+                 <button id="close-table-modal" class="mt-4 w-full p-2 bg-gray-500 text-white rounded hover:bg-gray-600">Close</button>
+            `;
+            
+            modalBackdrop.classList.remove('hidden');
+            tableModal.classList.remove('hidden');
+
+            document.getElementById('close-table-modal').onclick = closeModals;
+            document.querySelectorAll('.status-change-btn').forEach(btn => btn.onclick = () => changeTableStatus(table, btn.dataset.status));
+            document.querySelectorAll('.time-set-btn').forEach(btn => btn.onclick = () => setTableTime(table.id, btn.dataset.mins));
+            document.querySelectorAll('.resolve-btn').forEach(btn => btn.onclick = () => resolveHelpRequest(table.id, btn.dataset.type));
+        }
         
-        const sendBill = (e) => {
-            const { number, name, items, total } = e.target.closest('button').dataset;
-            const parsedItems = JSON.parse(items);
-            let billText = `Hello ${name}!\n\nThank you for your order from Artevia Cafe.\nHere is your bill:\n\n`;
-            parsedItems.forEach(item => {
-                billText += `${item.name} x ${item.quantity} - ₹${(item.finalPrice * item.quantity).toFixed(2)}\n`;
-            });
-            billText += `\n*Total Amount: ₹${parseFloat(total).toFixed(2)}*\n\nWe hope you enjoyed your meal!`;
-            const whatsappUrl = `https://wa.me/91${number}?text=${encodeURIComponent(billText)}`;
-            window.open(whatsappUrl, '_blank');
-        };
+        async function changeTableStatus(table, newStatus) {
+            const tableRef = doc(db, 'tables', table.id);
+            let updateData = { status: newStatus };
+            
+            // AUTOMATED CLEANING CYCLE
+            if (table.status === 'Occupied' && newStatus === 'Available') {
+                updateData = {
+                    status: 'Cleaning',
+                    orderId: null,
+                    availableTime: null,
+                    needsWater: false,
+                    needsHelp: false,
+                    cleaningUntil: Timestamp.fromDate(new Date(Date.now() + 2 * 60000)) // 2 minutes from now
+                };
+            } else if (newStatus === 'Available') {
+                 updateData = {
+                    status: 'Available',
+                    orderId: null,
+                    availableTime: null,
+                    needsWater: false,
+                    needsHelp: false,
+                    cleaningUntil: null
+                };
+            }
+            
+            await updateDoc(tableRef, updateData);
+            closeModals();
+        }
         
-        const showConfirmation = (text, onConfirm) => {
-            const modal = document.getElementById('confirmation-modal');
-            document.getElementById('modal-text').textContent = text;
-            
-            const confirmBtn = document.getElementById('confirm-btn');
-            const cancelBtn = document.getElementById('cancel-btn');
-
-            const confirmHandler = () => {
-                onConfirm();
-                modal.classList.add('hidden');
-                cleanup();
-            };
-            const cancelHandler = () => {
-                modal.classList.add('hidden');
-                cleanup();
-            };
-            
-            const cleanup = () => {
-                confirmBtn.removeEventListener('click', confirmHandler);
-                cancelBtn.removeEventListener('click', cancelHandler);
-            };
-
-            confirmBtn.addEventListener('click', confirmHandler);
-            cancelBtn.addEventListener('click', cancelHandler);
-            
-            modal.classList.remove('hidden');
-        };
-
-        const clearCompletedOrders = async () => {
-            const q = query(collection(db, 'orders'), where("status", "==", "Completed"));
-            try {
-                const querySnapshot = await getDocs(q);
-                if(querySnapshot.empty) {
-                    alert("No completed orders to clear.");
-                    return;
-                }
+        async function setTableTime(tableId, mins) {
+            const availableTime = new Date(Date.now() + mins * 60000);
+            await updateDoc(doc(db, 'tables', tableId), { availableTime: Timestamp.fromDate(availableTime) });
+            closeModals();
+        }
+        
+        async function resolveHelpRequest(tableId, type) {
+            await updateDoc(doc(db, 'tables', tableId), { [type]: false });
+            closeModals();
+        }
+        
+        function closeModals() {
+            modalBackdrop.classList.add('hidden');
+            tableModal.classList.add('hidden');
+            document.getElementById('log-modal').classList.add('hidden');
+        }
+        modalBackdrop.onclick = closeModals;
+        
+        // --- UTILITY & PERIODIC TASKS ---
+        function updateTimers() {
+            // Check for tables whose cleaning cycle has finished
+            // FIX: Replaced the indexed query with a client-side filter to avoid manual index creation.
+             onSnapshot(collection(db, 'tables'), (snapshot) => {
                 const batch = writeBatch(db);
-                querySnapshot.forEach(doc => batch.delete(doc.ref));
-                await batch.commit();
-            } catch (error) {
-                console.error("Error clearing completed orders:", error);
-            }
-        };
-
-        document.querySelector('main').addEventListener('click', e => {
-            const moveBtn = e.target.closest('.move-order-btn');
-            const billBtn = e.target.closest('.send-bill-btn');
-            if (moveBtn) updateOrderStatus(moveBtn.dataset.id, moveBtn.dataset.nextStatus);
-            if (billBtn) sendBill(e);
-        });
+                let changesMade = false;
+                snapshot.forEach(docSnap => {
+                    const table = docSnap.data();
+                    if (table.status === 'Cleaning' && table.cleaningUntil && table.cleaningUntil.toDate() <= new Date()) {
+                        batch.update(docSnap.ref, { status: 'Available', cleaningUntil: null });
+                        changesMade = true;
+                    }
+                });
+                if (changesMade) {
+                    batch.commit().catch(err => console.error("Error updating timers:", err));
+                }
+             });
+        }
         
-        document.getElementById('clear-completed-btn').addEventListener('click', () => {
-            showConfirmation('Are you sure you want to delete ALL completed orders? This cannot be undone.', clearCompletedOrders);
-        });
+        // --- LOGGING & ARCHIVING ---
+        document.getElementById('archive-btn').onclick = async () => {
+            if (!confirm('Are you sure you want to hide all paid, completed orders from the main board? They will still be visible in the full log.')) return;
 
-        listenToOrders();
+            const q = query(collection(db, 'orders'), where('status', '==', 'Completed'), where('paymentStatus', '==', 'Paid'));
+            const snapshot = await getDocs(q);
+            const batch = writeBatch(db);
+            snapshot.forEach(docSnap => batch.update(docSnap.ref, { isHidden: true }));
+            await batch.commit();
+            alert(`${snapshot.size} orders archived.`);
+        };
+        
+        document.getElementById('view-log-btn').onclick = () => {
+             const logContent = document.getElementById('log-content');
+             logContent.innerHTML = '';
+             
+             const groupedByCustomer = allTodayOrders.reduce((acc, order) => {
+                (acc[order.whatsappNumber] = acc[order.whatsappNumber] || []).push(order);
+                return acc;
+             }, {});
+             
+             for (const number in groupedByCustomer) {
+                 const orders = groupedByCustomer[number].sort((a,b) => b.createdAt.toDate() - a.createdAt.toDate());
+                 const customerName = orders[0].customerName;
+
+                 const customerDiv = document.createElement('div');
+                 customerDiv.className = 'mb-6';
+                 customerDiv.innerHTML = `<h4 class="font-bold text-lg mb-2">${customerName} - ${number}</h4>`;
+                 
+                 orders.forEach(order => {
+                    const orderDiv = document.createElement('div');
+                    orderDiv.className = 'p-3 bg-gray-50 rounded border mb-2';
+                     orderDiv.innerHTML = `
+                        <div class="flex justify-between items-center text-sm">
+                            <span>${order.createdAt.toDate().toLocaleTimeString()} - ${order.orderType} ${order.tableId || ''}</span>
+                            <span>Status: ${order.status} / ${order.paymentStatus}</span>
+                            <span class="font-bold">₹${order.totalAmount.toFixed(0)}</span>
+                        </div>
+                     `;
+                     customerDiv.appendChild(orderDiv);
+                 });
+                 logContent.appendChild(customerDiv);
+             }
+
+             document.getElementById('log-modal').classList.remove('hidden');
+             modalBackdrop.classList.remove('hidden');
+        };
+        document.getElementById('close-log-btn').onclick = closeModals;
+
     </script>
 </body>
 </html>
