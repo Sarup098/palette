@@ -3,56 +3,71 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Palette Cafe - Order Now</title>
+    <title>Artevia Palette - Order Now</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/heroicons/2.0.16/24/solid/styles.min.css" rel="stylesheet">
     <style>
-        .animate-pulse-red {
-            animation: pulse-red 1.5s infinite;
-        }
-        @keyframes pulse-red {
-            0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
-            70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
-        }
+        /* Custom Brand Color */
+        .bg-brand { background-color: #a43c1a; }
+        .hover\:bg-brand-dark:hover { background-color: #8a3216; } /* Darker shade for hover */
+        .text-brand { color: #a43c1a; }
+        .border-brand { border-color: #a43c1a; }
+        .ring-brand:focus { --tw-ring-color: #a43c1a; }
+
         /* Hide scrollbar for category container */
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+        /* Animation for the Biryani Banner */
+        .slide-in-top {
+            animation: slide-in-top 0.5s cubic-bezier(0.250, 0.460, 0.450, 0.940) both;
+        }
+        @keyframes slide-in-top {
+            0% { transform: translateY(-50px); opacity: 0; }
+            100% { transform: translateY(0); opacity: 1; }
+        }
     </style>
 </head>
-<body class="bg-gray-50 font-sans">
+<body class="bg-gray-100 font-sans">
 
     <!-- Main Container -->
     <div class="container mx-auto max-w-4xl p-2 sm:p-4">
-        <header class="text-center my-4">
-            <h1 class="text-4xl font-extrabold text-gray-800 tracking-tight">Palette Cafe</h1>
-            <p class="text-gray-500 mt-1">Deliciously Crafted. Served with Love.</p>
+        <header class="text-center my-4 flex flex-col items-center bg-brand text-white py-4 rounded-xl shadow-lg">
+            <img src="https://raw.githubusercontent.com/Sarup098/artevia/main/Artevia_Palette_Logo.png" alt="Artevia Palette Logo" class="h-32 w-auto object-contain">
         </header>
 
         <!-- Category Filters -->
-        <div id="category-filters" class="sticky top-0 bg-gray-50/80 backdrop-blur-sm z-20 py-3 mb-4 overflow-x-auto no-scrollbar whitespace-nowrap">
+        <div id="category-filters" class="sticky top-0 bg-gray-100/90 backdrop-blur-sm z-20 py-3 mb-4 overflow-x-auto no-scrollbar whitespace-nowrap">
             <!-- Filters will be injected here -->
         </div>
 
         <!-- Menu Grid -->
-        <main id="menu-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+        <main id="menu-grid" class="grid grid-cols-2 gap-4 sm:gap-6 pb-48">
             <!-- Menu items will be injected here -->
         </main>
     </div>
 
-    <!-- Floating Action Buttons -->
-    <div id="cart-fab" class="fixed bottom-6 right-6 z-30">
-        <button id="view-cart-btn" class="bg-indigo-600 text-white w-16 h-16 rounded-full shadow-lg flex items-center justify-center hover:bg-indigo-700 transition-transform transform hover:scale-110">
-            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
-            <span id="cart-count" class="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full h-6 w-6 flex items-center justify-center">0</span>
-        </button>
-    </div>
-    <div id="dine-in-fabs" class="fixed bottom-24 right-6 z-30 flex flex-col gap-4 hidden">
-        <button id="request-water-btn" class="bg-blue-500 text-white w-16 h-16 rounded-full shadow-lg flex items-center justify-center hover:bg-blue-600 transition-transform transform hover:scale-110">
-             <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" viewBox="0 0 20 20" fill="currentColor"><path d="M5 12a1 1 0 102 0V6.414l1.293 1.293a1 1 0 001.414-1.414l-3-3a1 1 0 00-1.414 0l-3 3a1 1 0 001.414 1.414L5 6.414V12zM15 8a1 1 0 10-2 0v5.586l-1.293-1.293a1 1 0 00-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L15 13.586V8z" /></svg>
-        </button>
-         <button id="request-help-btn" class="bg-yellow-500 text-white w-16 h-16 rounded-full shadow-lg flex items-center justify-center hover:bg-yellow-600 transition-transform transform hover:scale-110">
-             <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd" /></svg>
-        </button>
+    <!-- Floating Action Buttons Container -->
+    <div id="floating-buttons-container" class="fixed bottom-4 right-4 z-30 w-36">
+        <!-- Dine-in specific buttons -->
+        <div id="dine-in-fabs" class="flex flex-col items-center gap-2 mb-2 hidden">
+            <button id="request-water-btn" class="bg-blue-500 text-white w-full h-12 rounded-lg shadow-lg flex items-center justify-center gap-2 hover:bg-blue-600 transition-transform transform hover:scale-105">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 20 20" fill="currentColor"><path d="M5 12a1 1 0 102 0V6.414l1.293 1.293a1 1 0 001.414-1.414l-3-3a1 1 0 00-1.414 0l-3 3a1 1 0 001.414 1.414L5 6.414V12zM15 8a1 1 0 10-2 0v5.586l-1.293-1.293a1 1 0 00-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L15 13.586V8z" /></svg>
+                <span class="font-semibold">Water</span>
+            </button>
+            <button id="request-help-btn" class="bg-yellow-500 text-white w-full h-12 rounded-lg shadow-lg flex items-center justify-center gap-2 hover:bg-yellow-600 transition-transform transform hover:scale-105">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd" /></svg>
+                <span class="font-semibold">Help</span>
+            </button>
+        </div>
+        <!-- Main Cart Button -->
+        <div id="cart-fab">
+            <button id="view-cart-btn" class="bg-brand text-white w-full h-16 rounded-xl shadow-lg flex items-center justify-center hover:bg-brand-dark transition-transform transform hover:scale-105 text-lg font-bold gap-2">
+                <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                <span>Cart</span>
+                <span id="cart-count" class="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full h-6 w-6 flex items-center justify-center border-2 border-white">0</span>
+            </button>
+        </div>
     </div>
 
 
@@ -61,50 +76,62 @@
         
         <!-- Order Type Modal -->
         <div id="order-type-modal" class="bg-white rounded-xl shadow-2xl p-6 w-full max-w-sm text-center transform transition-all scale-100">
-            <h2 class="text-2xl font-bold mb-2">Welcome!</h2>
-            <p class="text-gray-600 mb-6">How would you like to order?</p>
-            <div class="flex flex-col gap-3">
-                <button data-type="Dine-in" class="order-type-btn w-full bg-green-500 text-white font-bold py-3 rounded-lg hover:bg-green-600 transition">Dine-in</button>
-                <button data-type="Takeaway" class="order-type-btn w-full bg-blue-500 text-white font-bold py-3 rounded-lg hover:bg-blue-600 transition">Takeaway</button>
-                <button id="delivery-btn" data-type="Delivery" class="order-type-btn w-full bg-purple-500 text-white font-bold py-3 rounded-lg hover:bg-purple-600 transition disabled:bg-gray-400 disabled:cursor-not-allowed">Delivery</button>
+            <h2 class="text-4xl font-bold mb-2">Welcome!</h2>
+            <p class="text-gray-600 mb-6 text-xl">How would you like to order?</p>
+            <div class="flex flex-col gap-4">
+                <button data-type="Dine-in" class="order-type-btn w-full bg-brand text-white text-xl font-bold py-4 rounded-lg hover:bg-brand-dark transition">Dine-in</button>
+                <button data-type="Takeaway" class="order-type-btn w-full bg-brand text-white text-xl font-bold py-4 rounded-lg hover:bg-brand-dark transition">Takeaway</button>
+                <button id="delivery-btn" data-type="Delivery" class="order-type-btn w-full bg-brand text-white text-xl font-bold py-4 rounded-lg hover:bg-brand-dark transition disabled:bg-gray-400 disabled:cursor-not-allowed">Delivery</button>
                 <p id="delivery-time-info" class="text-xs text-gray-500 mt-1 hidden">(Available 5 PM - 9 PM)</p>
             </div>
         </div>
 
         <!-- Table Selection Modal -->
         <div id="table-selection-modal" class="bg-white rounded-xl shadow-2xl p-6 w-full max-w-2xl text-center transform transition-all scale-0 hidden">
-             <h2 class="text-2xl font-bold mb-6">Select Your Table</h2>
+             <h2 class="text-4xl font-bold mb-6">Select Your Table</h2>
              <div id="table-grid" class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-4 max-h-[60vh] overflow-y-auto">
                 <!-- Tables will be injected here -->
              </div>
         </div>
 
+        <!-- NEW: Occupied Table Options Modal -->
+        <div id="occupied-table-modal" class="bg-white rounded-xl shadow-2xl p-6 w-full max-w-sm text-center transform transition-all scale-0 hidden">
+            <h2 class="text-3xl font-bold mb-2">Table Is Occupied</h2>
+            <p class="text-gray-600 mb-6 text-lg">What would you like to do?</p>
+            <div class="flex flex-col gap-4">
+                <button id="add-to-existing-order-btn" class="w-full bg-brand text-white text-xl font-bold py-4 rounded-lg hover:bg-brand-dark transition">Add to Existing Order</button>
+                <button id="start-new-order-btn" class="w-full bg-gray-600 text-white text-xl font-bold py-4 rounded-lg hover:bg-gray-700 transition">Start a New Separate Order</button>
+            </div>
+        </div>
+
         <!-- Cart Modal -->
         <div id="cart-modal" class="bg-gray-50 rounded-xl shadow-2xl w-full max-w-md transform transition-all scale-0 flex flex-col hidden">
              <div class="p-6 border-b">
-                <h2 class="text-2xl font-bold text-center">Your Order</h2>
+                <h2 class="text-4xl font-bold text-center">Your Order</h2>
              </div>
              <div id="cart-items" class="p-6 flex-grow overflow-y-auto max-h-[50vh]">
                 <!-- Cart items will be here -->
              </div>
              <div class="p-6 bg-white border-t rounded-b-xl">
-                <div class="flex justify-between items-center font-bold text-xl mb-4">
+                <!-- NEW: Biryani Reminder Container -->
+                <div id="special-offer-container" class="mb-4"></div>
+
+                <div class="flex justify-between items-center font-bold text-3xl mb-4">
                     <span>Total:</span>
                     <span id="cart-total">₹0</span>
                 </div>
                 <div id="checkout-form" class="hidden">
-                    <input type="tel" id="whatsapp-number" class="w-full p-3 border rounded-md mb-3" placeholder="Your WhatsApp Number (10 digits)" maxlength="10">
-                    <input type="text" id="customer-name" class="w-full p-3 border rounded-md mb-3 hidden" placeholder="Your Name">
+                    <input type="tel" id="whatsapp-number" class="w-full p-4 border rounded-md mb-3 text-xl" placeholder="WhatsApp Number" maxlength="10">
+                    <input type="text" id="customer-name" class="w-full p-4 border rounded-md mb-3 hidden text-xl" placeholder="Your Name">
                     <div class="flex items-center mb-4">
-                        <input type="checkbox" id="confirm-order" class="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500">
-                        <label for="confirm-order" class="ml-2 block text-sm text-gray-800">I confirm this is a genuine order. I understand fake orders will be blocked.</label>
+                        <input type="checkbox" id="confirm-order" class="h-5 w-5 text-brand border-gray-300 rounded ring-brand">
+                        <label for="confirm-order" class="ml-3 block text-base text-gray-800">I confirm this is a genuine order. Fake orders will be blocked.</label>
                     </div>
                 </div>
-                <button id="checkout-btn" class="w-full bg-gray-800 text-white font-bold py-3 rounded-lg hover:bg-gray-900 transition">Proceed to Checkout</button>
-                 <button id="place-order-btn" class="w-full bg-green-600 text-white font-bold py-3 rounded-lg hover:bg-green-700 transition hidden">Place Order</button>
+                <button id="checkout-btn" class="w-full bg-gray-800 text-white text-xl font-bold py-4 rounded-lg hover:bg-gray-900 transition">Proceed to Checkout</button>
+                 <button id="place-order-btn" class="w-full bg-brand text-white text-xl font-bold py-4 rounded-lg hover:bg-brand-dark transition hidden">Place Order</button>
              </div>
         </div>
-
     </div>
 
     <script type="module">
@@ -135,6 +162,7 @@
         const modalContainer = document.getElementById('modal-container');
         const orderTypeModal = document.getElementById('order-type-modal');
         const tableSelectionModal = document.getElementById('table-selection-modal');
+        const occupiedTableModal = document.getElementById('occupied-table-modal');
         const cartModal = document.getElementById('cart-modal');
         const menuGrid = document.getElementById('menu-grid');
         
@@ -171,7 +199,7 @@
         });
 
         function showModal(modal) {
-            [orderTypeModal, tableSelectionModal, cartModal].forEach(m => {
+            [orderTypeModal, tableSelectionModal, cartModal, occupiedTableModal].forEach(m => {
                 m.classList.add('hidden', 'scale-0');
                 m.classList.remove('scale-100');
             });
@@ -188,7 +216,6 @@
                 const tables = [];
                 snapshot.forEach(doc => tables.push(doc.data()));
                 
-                // FIX: Made sorting more robust to handle missing or malformed tableNumber field.
                 tables.sort((a, b) => {
                     const numA = (a.tableNumber && typeof a.tableNumber === 'string') ? parseInt(a.tableNumber.slice(1)) : 0;
                     const numB = (b.tableNumber && typeof b.tableNumber === 'string') ? parseInt(b.tableNumber.slice(1)) : 0;
@@ -196,7 +223,6 @@
                 });
                 
                 tables.forEach(table => {
-                    // Don't render if tableNumber is missing, preventing display of bad data.
                     if (!table.tableNumber) return;
 
                     const tableEl = document.createElement('button');
@@ -217,7 +243,7 @@
                         case 'Occupied':
                             bgColor = 'bg-yellow-100 hover:bg-yellow-200';
                             textColor = 'text-yellow-800';
-                            isDisabled = false; // Allow adding to order
+                            isDisabled = false; // MODIFIED: Always allow selection
                              if (table.availableTime) {
                                 const freeIn = Math.round((table.availableTime.toDate() - new Date()) / 60000);
                                 if (freeIn > 0) countdownText = `<div class="text-xs mt-1">Free in ~${freeIn} min</div>`;
@@ -245,30 +271,57 @@
                 });
             }, (error) => {
                 console.error("Error fetching tables: ", error);
-                alert("Could not load table information. Please check your connection or contact support.");
             });
         }
         
         async function selectTable(tableId, status, orderId) {
             selectedTableId = tableId;
-            modalContainer.classList.add('hidden');
             document.getElementById('dine-in-fabs').classList.remove('hidden');
 
-            if(status === 'Occupied' && orderId) {
-                // Fetch existing order and populate cart
+            if (status === 'Occupied') {
+                // NEW: Show options modal for occupied tables
+                showOccupiedTableOptions(orderId);
+            } else {
+                // Standard flow for available tables
+                cart = {};
+                updateCartView();
+                modalContainer.classList.add('hidden');
+            }
+        }
+        
+        // NEW FUNCTION: Handle options for an occupied table
+        function showOccupiedTableOptions(orderId) {
+            showModal(occupiedTableModal);
+            
+            const addToExistingBtn = document.getElementById('add-to-existing-order-btn');
+            const startNewBtn = document.getElementById('start-new-order-btn');
+            
+            // Clone and replace to remove old listeners
+            const newAddToExistingBtn = addToExistingBtn.cloneNode(true);
+            const newStartNewBtn = startNewBtn.cloneNode(true);
+            addToExistingBtn.parentNode.replaceChild(newAddToExistingBtn, addToExistingBtn);
+            startNewBtn.parentNode.replaceChild(newStartNewBtn, startNewBtn);
+
+            newAddToExistingBtn.onclick = async () => {
                 const orderRef = doc(db, 'orders', orderId);
                 const orderSnap = await getDoc(orderRef);
                 if(orderSnap.exists()) {
                     cart = JSON.parse(orderSnap.data().items || '{}');
-                    alert(`Table ${tableId} already has an order. Items have been added to your cart.`);
+                    alert(`Items from the existing order have been added to your cart.`);
                 } else {
                     cart = {};
                 }
-            } else {
+                updateCartView();
+                modalContainer.classList.add('hidden');
+            };
+
+            newStartNewBtn.onclick = () => {
                 cart = {};
-            }
-            updateCartView();
+                updateCartView();
+                modalContainer.classList.add('hidden');
+            };
         }
+
 
         // --- MENU & CATEGORIES ---
         async function fetchMenu() {
@@ -286,7 +339,6 @@
                 renderMenuItems(items);
             }, (error) => {
                  console.error("Error fetching menu: ", error);
-                 alert("Could not load the menu. Please check your connection or contact support.");
             });
         }
 
@@ -295,8 +347,8 @@
             filtersContainer.innerHTML = '';
             categories.sort().forEach(category => {
                 const btn = document.createElement('button');
-                btn.className = 'category-filter-btn px-4 py-2 mr-2 text-sm font-medium rounded-full transition bg-white text-gray-700 shadow-sm border border-gray-200 hover:bg-gray-100';
-                if(category === 'All') btn.classList.add('bg-indigo-600', 'text-white', 'border-indigo-600');
+                btn.className = 'category-filter-btn px-6 py-3 mr-3 text-lg font-medium rounded-full transition bg-white text-gray-800 shadow-sm border border-gray-200 hover:bg-gray-200';
+                if(category === 'All') btn.classList.add('bg-brand', 'text-white', 'border-brand');
                 btn.textContent = category;
                 btn.dataset.category = category;
                 btn.addEventListener('click', filterMenu);
@@ -314,18 +366,18 @@
                 card.className = 'menu-item-card bg-white rounded-xl shadow-md overflow-hidden flex flex-col transition-transform transform hover:-translate-y-1';
                 card.dataset.category = item.category;
                 card.innerHTML = `
-                    <div class="h-48 overflow-hidden">
+                    <div class="h-40 overflow-hidden">
                         <img class="w-full h-full object-cover" src="${item.imageUrl || 'https://placehold.co/400x300'}" alt="${item.name}">
                     </div>
-                    <div class="p-4 flex-grow flex flex-col">
-                        <h3 class="text-lg font-bold text-gray-800">${item.name}</h3>
-                        <p class="text-sm text-gray-500 mt-1 flex-grow">${item.description}</p>
-                        <div class="flex justify-between items-center mt-4">
+                    <div class="p-3 flex-grow flex flex-col">
+                        <h3 class="text-base font-bold text-gray-800">${item.name}</h3>
+                        <p class="text-sm text-gray-600 mt-1 flex-grow">${item.description || ''}</p>
+                        <div class="flex justify-between items-center mt-3">
                             <p class="text-lg font-extrabold text-gray-900">
                                 ₹${finalPrice.toFixed(0)}
-                                ${item.discount > 0 ? `<span class="text-sm text-red-500 line-through ml-2">₹${item.price.toFixed(0)}</span>` : ''}
+                                ${item.discount > 0 ? `<span class="text-xs text-red-500 line-through ml-1">₹${item.price.toFixed(0)}</span>` : ''}
                             </p>
-                            <button data-id="${item.id}" class="add-to-cart-btn bg-indigo-100 text-indigo-700 font-semibold px-4 py-2 rounded-full hover:bg-indigo-200 transition text-sm">Add</button>
+                            <button data-id="${item.id}" class="add-to-cart-btn bg-brand text-white font-semibold px-4 py-2 rounded-full hover:bg-brand-dark transition text-sm">Add</button>
                         </div>
                     </div>
                 `;
@@ -337,10 +389,10 @@
         function filterMenu(e) {
             const selectedCategory = e.target.dataset.category;
             document.querySelectorAll('.category-filter-btn').forEach(btn => {
-                btn.classList.remove('bg-indigo-600', 'text-white', 'border-indigo-600');
-                btn.classList.add('bg-white', 'text-gray-700', 'border-gray-200');
+                btn.classList.remove('bg-brand', 'text-white', 'border-brand');
+                btn.classList.add('bg-white', 'text-gray-800', 'border-gray-200');
             });
-            e.target.classList.add('bg-indigo-600', 'text-white', 'border-indigo-600');
+            e.target.classList.add('bg-brand', 'text-white', 'border-brand');
             
             document.querySelectorAll('.menu-item-card').forEach(card => {
                 card.classList.toggle('hidden', selectedCategory !== 'All' && card.dataset.category !== selectedCategory);
@@ -363,7 +415,7 @@
             cartItemsContainer.innerHTML = '';
             
             if (Object.keys(cart).length === 0) {
-                 cartItemsContainer.innerHTML = '<p class="text-center text-gray-500">Your cart is empty.</p>';
+                 cartItemsContainer.innerHTML = '<p class="text-center text-gray-500 py-8 text-lg">Your cart is empty.</p>';
             } else {
                 for (const itemId in cart) {
                     const quantity = cart[itemId];
@@ -374,18 +426,22 @@
                         totalPrice += finalPrice * quantity;
                         
                         const itemEl = document.createElement('div');
-                        itemEl.className = 'flex justify-between items-center py-3 border-b';
+                        itemEl.className = 'flex justify-between items-center py-4 border-b text-lg';
                         itemEl.innerHTML = `
                             <div>
                                 <p class="font-semibold">${item.name}</p>
-                                <p class="text-sm text-gray-600">₹${finalPrice.toFixed(0)}</p>
+                                <p class="text-base text-gray-600">₹${finalPrice.toFixed(0)}</p>
                             </div>
-                            <div class="flex items-center gap-3">
-                                <button class="cart-quantity-btn" data-id="${itemId}" data-change="-1">-</button>
-                                <span>${quantity}</span>
-                                <button class="cart-quantity-btn" data-id="${itemId}" data-change="1">+</button>
+                            <div class="flex items-center gap-4">
+                                <button class="cart-quantity-btn h-8 w-8 bg-gray-200 rounded-full text-xl font-bold">-</button>
+                                <span class="font-semibold w-4 text-center">${quantity}</span>
+                                <button class="cart-quantity-btn h-8 w-8 bg-gray-200 rounded-full text-xl font-bold">+</button>
                             </div>
                         `;
+                        itemEl.querySelector('button:first-of-type').dataset.id = itemId;
+                        itemEl.querySelector('button:first-of-type').dataset.change = "-1";
+                        itemEl.querySelector('button:last-of-type').dataset.id = itemId;
+                        itemEl.querySelector('button:last-of-type').dataset.change = "1";
                         cartItemsContainer.appendChild(itemEl);
                     }
                 }
@@ -397,9 +453,9 @@
 
             document.querySelectorAll('.cart-quantity-btn').forEach(btn => {
                 btn.addEventListener('click', (e) => {
-                    const { id, change } = e.target.dataset;
+                    const { id, change } = e.currentTarget.dataset;
                     cart[id] += parseInt(change);
-                    if (cart[id] === 0) delete cart[id];
+                    if (cart[id] <= 0) delete cart[id];
                     updateCartView();
                 });
             });
@@ -411,7 +467,7 @@
         });
         
         modalContainer.addEventListener('click', (e) => {
-            if (e.target === modalContainer) {
+            if (e.target === modalContainer || e.target.classList.contains('modal-close-btn')) {
                 modalContainer.classList.add('hidden');
             }
         });
@@ -428,6 +484,8 @@
             checkoutForm.classList.add('hidden');
             checkoutBtn.classList.remove('hidden');
             placeOrderBtn.classList.add('hidden');
+            // Clear any special offers
+            document.getElementById('special-offer-container').innerHTML = '';
         }
 
         checkoutBtn.addEventListener('click', () => {
@@ -435,10 +493,29 @@
                 alert('Your cart is empty!');
                 return;
             }
+            checkAndShowBiryaniOffer(); // NEW: Check for Monday special
             checkoutForm.classList.remove('hidden');
             checkoutBtn.classList.add('hidden');
             placeOrderBtn.classList.remove('hidden');
         });
+        
+        // NEW FUNCTION: Display Biryani offer on Mondays
+        function checkAndShowBiryaniOffer() {
+            const offerContainer = document.getElementById('special-offer-container');
+            const today = new Date().getDay(); // Sunday = 0, Monday = 1
+            
+            if (today === 1) {
+                offerContainer.innerHTML = `
+                    <div class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-800 p-4 rounded-md mb-4 slide-in-top">
+                        <p class="font-bold">✨ Monday Biryani Special!</p>
+                        <p class="text-sm mt-1">Don't forget about our special Biryani dinner tonight. It's included with monthly food plans (PG) or available for purchase separately!</p>
+                    </div>
+                `;
+            } else {
+                offerContainer.innerHTML = '';
+            }
+        }
+
 
         whatsappInput.addEventListener('blur', async () => {
              const number = whatsappInput.value.trim();
@@ -469,7 +546,6 @@
             placeOrderBtn.textContent = 'Placing Order...';
 
             try {
-                // Prepare order data
                 let totalAmount = 0;
                 let orderItems = {};
                 for (const itemId in cart) {
@@ -487,44 +563,43 @@
                 const orderData = {
                     customerName,
                     whatsappNumber,
-                    items: JSON.stringify(orderItems), // Store items as JSON string
+                    items: JSON.stringify(orderItems),
                     totalAmount,
-                    status: 'Pending', // Pending, In Progress, Ready, Out for Delivery, Completed
-                    paymentStatus: 'Unpaid', // Unpaid, Paid
+                    status: 'Pending',
+                    paymentStatus: 'Unpaid',
                     orderType,
                     tableId: selectedTableId,
                     createdAt: serverTimestamp(),
                     isHidden: false,
                 };
                 
-                // Use a batch write for atomicity
                 const batch = writeBatch(db);
-
-                // 1. Add/Update customer
                 const customerRef = doc(db, 'customers', whatsappNumber);
                 batch.set(customerRef, { name: customerName }, { merge: true });
 
-                // 2. Handle Dine-in table status and existing order update
                 if (orderType === 'Dine-in' && selectedTableId) {
                     const tableRef = doc(db, 'tables', selectedTableId);
                     const tableSnap = await getDoc(tableRef);
                     const existingOrderId = tableSnap.data().orderId;
-
-                    if (existingOrderId) {
-                        // Update existing order
+                    
+                    // Logic to handle both adding to an existing order and creating a new one for an occupied table.
+                    // If the cart was loaded from an existing order, it will have the same items + new ones.
+                    // If it was a "new separate order", the cart was cleared and this will be a completely new order document.
+                    if (existingOrderId && cartContainsExistingOrder(JSON.parse(tableSnap.data().items || '{}'))) {
                         const orderRef = doc(db, 'orders', existingOrderId);
                         batch.update(orderRef, {
                             items: JSON.stringify(orderItems),
                             totalAmount: totalAmount
                         });
                     } else {
-                        // Create a new order and link it to the table
                         const newOrderRef = doc(collection(db, 'orders'));
                         batch.set(newOrderRef, orderData);
-                        batch.update(tableRef, { status: 'Occupied', orderId: newOrderRef.id });
+                        // Only link the order to the table if the table was previously available.
+                        if (tableSnap.data().status === 'Available') {
+                             batch.update(tableRef, { status: 'Occupied', orderId: newOrderRef.id });
+                        }
                     }
                 } else {
-                     // 3. Add new order for Takeaway/Delivery
                     const newOrderRef = doc(collection(db, 'orders'));
                     batch.set(newOrderRef, orderData);
                 }
@@ -536,8 +611,6 @@
                 updateCartView();
                 modalContainer.classList.add('hidden');
                 
-                // If it was a dine-in new order, we stay on the page.
-                // Otherwise, reset to the beginning.
                 if (orderType !== 'Dine-in') {
                     location.reload();
                 }
@@ -551,6 +624,17 @@
             }
         });
         
+        // Helper function to check if the current cart is an extension of an existing one.
+        // This is a simplified check for the demo.
+        function cartContainsExistingOrder(existingItems) {
+            for(const itemId in existingItems) {
+                if(!cart[itemId] || cart[itemId] < existingItems[itemId].quantity) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
         // --- DINE-IN HELP REQUESTS ---
         document.getElementById('request-water-btn').addEventListener('click', () => sendHelpRequest('needsWater'));
         document.getElementById('request-help-btn').addEventListener('click', () => sendHelpRequest('needsHelp'));
@@ -559,19 +643,26 @@
             if (!selectedTableId) return;
             const btn = type === 'needsWater' ? document.getElementById('request-water-btn') : document.getElementById('request-help-btn');
             btn.disabled = true;
+            console.log(`[Customer View] Sending '${type}' request for table ${selectedTableId}...`);
 
             const tableRef = doc(db, 'tables', selectedTableId);
             try {
                 await updateDoc(tableRef, { [type]: true });
+                console.log(`[Customer View] Successfully sent request for table ${selectedTableId}.`);
                 btn.classList.add('bg-green-500', 'hover:bg-green-500');
                 btn.innerHTML = `<svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>`;
                 setTimeout(() => {
                     btn.disabled = false;
                     btn.classList.remove('bg-green-500', 'hover:bg-green-500');
-                    btn.innerHTML = type === 'needsWater' ? `<svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" viewBox="0 0 20 20" fill="currentColor"><path d="M5 12a1 1 0 102 0V6.414l1.293 1.293a1 1 0 001.414-1.414l-3-3a1 1 0 00-1.414 0l-3 3a1 1 0 001.414 1.414L5 6.414V12zM15 8a1 1 0 10-2 0v5.586l-1.293-1.293a1 1 0 00-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L15 13.586V8z" /></svg>` : `<svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd" /></svg>`;
+                    const originalIcon = type === 'needsWater' 
+                        ? `<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 20 20" fill="currentColor"><path d="M5 12a1 1 0 102 0V6.414l1.293 1.293a1 1 0 001.414-1.414l-3-3a1 1 0 00-1.414 0l-3 3a1 1 0 001.414 1.414L5 6.414V12zM15 8a1 1 0 10-2 0v5.586l-1.293-1.293a1 1 0 00-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L15 13.586V8z" /></svg>`
+                        : `<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd" /></svg>`;
+                    const originalText = type === 'needsWater' ? 'Water' : 'Help';
+                    btn.innerHTML = `${originalIcon}<span class="font-semibold">${originalText}</span>`;
                 }, 3000);
             } catch (error) {
-                console.error('Error sending request:', error);
+                console.error(`[Customer View] Error sending '${type}' request for table ${selectedTableId}:`, error);
+                alert('Could not send request. Please try again.');
                 btn.disabled = false;
             }
         }
