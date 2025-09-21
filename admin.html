@@ -98,7 +98,6 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-app.js";
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-auth.js";
-        // FIX: Added 'getDoc' to the import list below. It was missing.
         import { getFirestore, collection, onSnapshot, doc, getDoc, updateDoc, writeBatch, query, where, Timestamp, getDocs } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-firestore.js";
 
         const firebaseConfig = {
@@ -133,7 +132,6 @@
         function initializeAdminPanel() {
             listenForTables();
             listenForOrders();
-            setInterval(updateTimers, 10000);
             attachStaticEventListeners();
         }
 
@@ -142,7 +140,24 @@
                 const tableGrid = document.getElementById('admin-table-grid');
                 tableGrid.innerHTML = '';
                 const tables = [];
-                snapshot.forEach(doc => tables.push({id: doc.id, ...doc.data()}));
+                
+                const batch = writeBatch(db);
+                let changesMade = false;
+
+                snapshot.forEach(doc => {
+                    let table = {id: doc.id, ...doc.data()};
+
+                    if (table.status === 'Cleaning' && table.cleaningUntil && table.cleaningUntil.toDate() <= new Date()) {
+                        batch.update(doc.ref, { status: 'Available', cleaningUntil: null });
+                        changesMade = true;
+                        table.status = 'Available'; 
+                    }
+                    tables.push(table);
+                });
+
+                if (changesMade) {
+                    batch.commit().catch(err => console.error("Error auto-updating table status:", err));
+                }
                 
                 tables.sort((a, b) => {
                     const numA = (a.tableNumber && typeof a.tableNumber === 'string') ? parseInt(a.tableNumber.slice(1)) : 0;
@@ -155,7 +170,6 @@
                     tableEl.dataset.tableId = table.id;
                     let bgColor = 'bg-gray-200';
                     let statusText = table.status;
-                    let countdownText = '';
                     
                     if (table.needsWater || table.needsHelp) {
                         tableEl.classList.add('animate-flash-red', 'border-2');
@@ -167,19 +181,40 @@
                         case 'Occupied': bgColor = 'bg-yellow-200'; break;
                         case 'Cleaning':
                             bgColor = 'bg-blue-200';
-                            if (table.cleaningUntil) {
-                                const cleanIn = Math.round((table.cleaningUntil.toDate() - new Date()) / 1000);
-                                if (cleanIn > 0) countdownText = `<div class="text-xs">${cleanIn}s left</div>`;
-                            }
                             break;
                         case 'Blocked': bgColor = 'bg-red-200'; break;
                     }
+
+                    let alertsAndTimersHtml = '';
                     
-                    tableEl.className = `p-2 rounded-lg text-center transition ${bgColor}`;
+                    if (table.status === 'Occupied' && table.availableTime) {
+                        const freeIn = Math.round((table.availableTime.toDate() - new Date()) / 60000);
+                        if (freeIn > 0) {
+                            alertsAndTimersHtml += `<div class="text-xs text-blue-700 font-semibold mt-1">~${freeIn} min left</div>`;
+                        }
+                    }
+
+                    if (table.status === 'Cleaning' && table.cleaningUntil) {
+                        const cleanIn = Math.round((table.cleaningUntil.toDate() - new Date()) / 1000);
+                        if (cleanIn > 0) {
+                             alertsAndTimersHtml += `<div class="text-xs font-semibold mt-1">${cleanIn}s left</div>`;
+                        }
+                    }
+                    
+                    if (table.needsWater) {
+                        alertsAndTimersHtml += `<div class="text-xs mt-1 font-bold bg-blue-500 text-white px-1 rounded-sm w-full">WATER</div>`;
+                    }
+                    if (table.needsHelp) {
+                        alertsAndTimersHtml += `<div class="text-xs mt-1 font-bold bg-yellow-500 text-black px-1 rounded-sm w-full">HELP</div>`;
+                    }
+                    
+                    tableEl.className = `p-2 rounded-lg text-center transition ${bgColor} flex flex-col justify-start min-h-[90px]`;
                     tableEl.innerHTML = `
-                        <div class="font-bold">${table.tableNumber || 'N/A'}</div>
+                        <div class="font-bold">${table.tableNumber || 'N/A'} <span class="text-xs font-normal text-gray-700">(${table.capacity}p)</span></div>
                         <div class="text-sm">${statusText}</div>
-                        ${countdownText}
+                        <div class="flex-grow flex flex-col justify-end">
+                            ${alertsAndTimersHtml}
+                        </div>
                     `;
                     tableGrid.appendChild(tableEl);
                 });
@@ -286,7 +321,7 @@
         // --- TABLE MODAL LOGIC ---
         const modalBackdrop = document.getElementById('modal-backdrop');
         const tableModal = document.getElementById('table-modal');
-        let currentTable = null; // Store currently opened table data
+        let currentTable = null; 
 
         async function openTableModal(tableId) {
             const tableRef = doc(db, 'tables', tableId);
@@ -367,27 +402,9 @@
             document.getElementById('log-modal').classList.add('hidden');
             currentTable = null;
         }
-
-        function updateTimers() {
-             onSnapshot(collection(db, 'tables'), (snapshot) => {
-                const batch = writeBatch(db);
-                let changesMade = false;
-                snapshot.forEach(docSnap => {
-                    const table = docSnap.data();
-                    if (table.status === 'Cleaning' && table.cleaningUntil && table.cleaningUntil.toDate() <= new Date()) {
-                        batch.update(docSnap.ref, { status: 'Available', cleaningUntil: null });
-                        changesMade = true;
-                    }
-                });
-                if (changesMade) {
-                    batch.commit().catch(err => console.error("Error updating timers:", err));
-                }
-             });
-        }
         
         // --- EVENT DELEGATION ---
         function attachStaticEventListeners() {
-            // Main Kanban board listener
             document.querySelector('.kanban-container').addEventListener('click', (e) => {
                 const paymentBtn = e.target.closest('.payment-toggle-btn');
                 const nextStepBtn = e.target.closest('.next-step-btn');
@@ -399,7 +416,6 @@
                 }
             });
 
-            // Table Grid listener
             document.getElementById('admin-table-grid').addEventListener('click', (e) => {
                 const tableButton = e.target.closest('button');
                 if (tableButton && tableButton.dataset.tableId) {
@@ -407,7 +423,6 @@
                 }
             });
 
-            // Table Modal listener
             tableModal.addEventListener('click', (e) => {
                 const statusBtn = e.target.closest('.status-change-btn');
                 const timeBtn = e.target.closest('.time-set-btn');
@@ -467,5 +482,4 @@
     </script>
 </body>
 </html>
-
 
