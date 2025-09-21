@@ -3,389 +3,578 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Artevia Cafe Menu</title>
+    <title>Palette Cafe - Order Now</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/heroicons/2.0.16/24/solid/styles.min.css" rel="stylesheet">
     <style>
-        body { font-family: 'Inter', sans-serif; }
-        .menu-item-card {
-            transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
-            display: flex;
-            flex-direction: column;
+        .animate-pulse-red {
+            animation: pulse-red 1.5s infinite;
         }
-        .menu-item-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        @keyframes pulse-red {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
         }
-        .category-filter-container {
-            position: sticky; top: 0; background-color: #f9fafb; z-index: 10;
-            padding: 0.75rem 0; overflow-x: auto; white-space: nowrap;
-            -ms-overflow-style: none; scrollbar-width: none;
-        }
-        .category-filter-container::-webkit-scrollbar { display: none; }
-        .category-btn.active { background-color: #78350f; color: white; font-weight: 600; }
-        .menu-item-image {
-            height: 150px;
-            object-fit: cover;
-            border-top-left-radius: 0.5rem;
-            border-top-right-radius: 0.5rem;
-        }
+        /* Hide scrollbar for category container */
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     </style>
 </head>
-<body class="bg-gray-100 text-gray-800">
+<body class="bg-gray-50 font-sans">
 
-    <!-- Order Type Selection Modal -->
-    <div id="order-type-modal" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-50">
-        <div class="bg-white rounded-lg shadow-xl w-full max-w-sm p-8 text-center">
-            <h2 class="text-3xl font-bold text-yellow-900 mb-6">How would you like to order?</h2>
-            <div class="space-y-4">
-                <button id="dine-in-btn" class="w-full bg-yellow-800 text-white py-4 rounded-lg font-semibold text-lg hover:bg-yellow-900 transition transform hover:scale-105">Dine-In</button>
-                <button id="delivery-btn" class="w-full bg-green-700 text-white py-4 rounded-lg font-semibold text-lg hover:bg-green-800 transition transform hover:scale-105">Local Delivery (Majitar)</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Main Container (Initially hidden) -->
-    <div id="main-container" class="container mx-auto max-w-2xl p-4 hidden">
-        <header class="text-center my-8">
-            <h1 class="text-4xl font-bold text-yellow-900">Artevia Cafe</h1>
-            <p id="header-subtitle" class="text-gray-600 mt-2 text-lg"></p>
+    <!-- Main Container -->
+    <div class="container mx-auto max-w-4xl p-2 sm:p-4">
+        <header class="text-center my-4">
+            <h1 class="text-4xl font-extrabold text-gray-800 tracking-tight">Palette Cafe</h1>
+            <p class="text-gray-500 mt-1">Deliciously Crafted. Served with Love.</p>
         </header>
 
-        <div class="category-filter-container mb-6 shadow-sm">
-            <div id="category-filters" class="flex gap-2 px-4"></div>
+        <!-- Category Filters -->
+        <div id="category-filters" class="sticky top-0 bg-gray-50/80 backdrop-blur-sm z-20 py-3 mb-4 overflow-x-auto no-scrollbar whitespace-nowrap">
+            <!-- Filters will be injected here -->
         </div>
+
+        <!-- Menu Grid -->
+        <main id="menu-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+            <!-- Menu items will be injected here -->
+        </main>
+    </div>
+
+    <!-- Floating Action Buttons -->
+    <div id="cart-fab" class="fixed bottom-6 right-6 z-30">
+        <button id="view-cart-btn" class="bg-indigo-600 text-white w-16 h-16 rounded-full shadow-lg flex items-center justify-center hover:bg-indigo-700 transition-transform transform hover:scale-110">
+            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+            <span id="cart-count" class="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full h-6 w-6 flex items-center justify-center">0</span>
+        </button>
+    </div>
+    <div id="dine-in-fabs" class="fixed bottom-24 right-6 z-30 flex flex-col gap-4 hidden">
+        <button id="request-water-btn" class="bg-blue-500 text-white w-16 h-16 rounded-full shadow-lg flex items-center justify-center hover:bg-blue-600 transition-transform transform hover:scale-110">
+             <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" viewBox="0 0 20 20" fill="currentColor"><path d="M5 12a1 1 0 102 0V6.414l1.293 1.293a1 1 0 001.414-1.414l-3-3a1 1 0 00-1.414 0l-3 3a1 1 0 001.414 1.414L5 6.414V12zM15 8a1 1 0 10-2 0v5.586l-1.293-1.293a1 1 0 00-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L15 13.586V8z" /></svg>
+        </button>
+         <button id="request-help-btn" class="bg-yellow-500 text-white w-16 h-16 rounded-full shadow-lg flex items-center justify-center hover:bg-yellow-600 transition-transform transform hover:scale-110">
+             <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd" /></svg>
+        </button>
+    </div>
+
+
+    <!-- Modals Container -->
+    <div id="modal-container" class="fixed inset-0 bg-black bg-opacity-60 z-40 flex items-center justify-center p-4">
         
-        <div id="menu-items" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-             <!-- Menu items will be dynamically inserted here -->
-             <div class="text-center sm:col-span-2 text-gray-500 py-10">Loading menu...</div>
+        <!-- Order Type Modal -->
+        <div id="order-type-modal" class="bg-white rounded-xl shadow-2xl p-6 w-full max-w-sm text-center transform transition-all scale-100">
+            <h2 class="text-2xl font-bold mb-2">Welcome!</h2>
+            <p class="text-gray-600 mb-6">How would you like to order?</p>
+            <div class="flex flex-col gap-3">
+                <button data-type="Dine-in" class="order-type-btn w-full bg-green-500 text-white font-bold py-3 rounded-lg hover:bg-green-600 transition">Dine-in</button>
+                <button data-type="Takeaway" class="order-type-btn w-full bg-blue-500 text-white font-bold py-3 rounded-lg hover:bg-blue-600 transition">Takeaway</button>
+                <button id="delivery-btn" data-type="Delivery" class="order-type-btn w-full bg-purple-500 text-white font-bold py-3 rounded-lg hover:bg-purple-600 transition disabled:bg-gray-400 disabled:cursor-not-allowed">Delivery</button>
+                <p id="delivery-time-info" class="text-xs text-gray-500 mt-1 hidden">(Available 5 PM - 9 PM)</p>
+            </div>
         </div>
 
-        <div class="fixed bottom-6 right-6 z-20">
-            <button id="view-cart-btn" class="bg-yellow-800 text-white rounded-full p-4 shadow-lg flex items-center justify-center">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
-                <span id="cart-count" class="absolute -top-1 -right-1 bg-red-600 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">0</span>
-            </button>
+        <!-- Table Selection Modal -->
+        <div id="table-selection-modal" class="bg-white rounded-xl shadow-2xl p-6 w-full max-w-2xl text-center transform transition-all scale-0 hidden">
+             <h2 class="text-2xl font-bold mb-6">Select Your Table</h2>
+             <div id="table-grid" class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-4 max-h-[60vh] overflow-y-auto">
+                <!-- Tables will be injected here -->
+             </div>
         </div>
-    </div>
 
-    <!-- Modals (Cart, Customer, Success) -->
-    <div id="cart-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center p-4 z-30">
-        <div class="bg-white rounded-lg shadow-xl w-full max-w-md">
-            <div class="p-6 border-b"><h2 class="text-2xl font-semibold">Your Order</h2></div>
-            <div id="cart-items" class="p-6 max-h-64 overflow-y-auto"></div>
-            <div class="p-6 border-t bg-gray-50 rounded-b-lg">
-                <div class="flex justify-between items-center font-bold text-xl">
-                    <span>Total:</span><span id="cart-total">₹0.00</span>
+        <!-- Cart Modal -->
+        <div id="cart-modal" class="bg-gray-50 rounded-xl shadow-2xl w-full max-w-md transform transition-all scale-0 flex flex-col hidden">
+             <div class="p-6 border-b">
+                <h2 class="text-2xl font-bold text-center">Your Order</h2>
+             </div>
+             <div id="cart-items" class="p-6 flex-grow overflow-y-auto max-h-[50vh]">
+                <!-- Cart items will be here -->
+             </div>
+             <div class="p-6 bg-white border-t rounded-b-xl">
+                <div class="flex justify-between items-center font-bold text-xl mb-4">
+                    <span>Total:</span>
+                    <span id="cart-total">₹0</span>
                 </div>
-                <button id="place-order-btn" class="w-full bg-green-600 text-white py-3 rounded-lg mt-4 font-semibold hover:bg-green-700 transition">Place Order</button>
-                <button id="close-cart-btn" class="w-full bg-gray-300 text-gray-800 py-3 rounded-lg mt-2 hover:bg-gray-400 transition">Close</button>
-            </div>
+                <div id="checkout-form" class="hidden">
+                    <input type="tel" id="whatsapp-number" class="w-full p-3 border rounded-md mb-3" placeholder="Your WhatsApp Number (10 digits)" maxlength="10">
+                    <input type="text" id="customer-name" class="w-full p-3 border rounded-md mb-3 hidden" placeholder="Your Name">
+                    <div class="flex items-center mb-4">
+                        <input type="checkbox" id="confirm-order" class="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500">
+                        <label for="confirm-order" class="ml-2 block text-sm text-gray-800">I confirm this is a genuine order. I understand fake orders will be blocked.</label>
+                    </div>
+                </div>
+                <button id="checkout-btn" class="w-full bg-gray-800 text-white font-bold py-3 rounded-lg hover:bg-gray-900 transition">Proceed to Checkout</button>
+                 <button id="place-order-btn" class="w-full bg-green-600 text-white font-bold py-3 rounded-lg hover:bg-green-700 transition hidden">Place Order</button>
+             </div>
         </div>
+
     </div>
-    <div id="customer-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center p-4 z-40">
-        <div class="bg-white rounded-lg shadow-xl w-full max-w-sm p-6">
-            <h2 class="text-2xl font-semibold mb-4 text-center">Final Step</h2>
-            <p class="text-center text-gray-600 mb-4">We'll send the bill to your WhatsApp.</p>
-            <div class="space-y-4">
-                <input type="tel" id="whatsapp-number" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-800" placeholder="Enter WhatsApp Number">
-                <input type="text" id="customer-name" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-800 hidden" placeholder="Enter Your Name">
-                <textarea id="delivery-address" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-800 hidden" placeholder="Enter Full Delivery Address" rows="3"></textarea>
-            </div>
-            <button id="submit-order-btn" class="w-full bg-yellow-800 text-white py-3 rounded-lg mt-6 font-semibold hover:bg-yellow-900 transition">Confirm & Order</button>
-            <button id="close-customer-modal-btn" class="w-full bg-gray-300 text-gray-800 py-3 rounded-lg mt-2 hover:bg-gray-400 transition">Cancel</button>
-        </div>
-    </div>
-    <div id="success-message" class="fixed top-5 right-5 bg-green-500 text-white py-2 px-4 rounded-lg shadow-md hidden z-50">Order placed successfully!</div>
 
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getFirestore, doc, getDoc, setDoc, addDoc, collection, serverTimestamp, onSnapshot, query } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-        import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-app.js";
+        import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-auth.js";
+        import { getFirestore, collection, onSnapshot, doc, getDoc, setDoc, updateDoc, addDoc, query, where, getDocs, writeBatch, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-firestore.js";
         
-        // --- Firebase Config ---
         const firebaseConfig = {
             apiKey: "AIzaSyCuepnUYt_rDEffSraYycHxYrm5sDlXM6s",
             authDomain: "palette-orders.firebaseapp.com",
             projectId: "palette-orders",
-            storageBucket: "palette-orders.appspot.com",
+            storageBucket: "palette-orders.firebasestorage.app",
             messagingSenderId: "424044050877",
-            appId: "1:42044050877:web:2c67d2d065d3411e173ad4",
-            measurementId: "G-M5S8PYDFZ5"
+            appId: "1:424044050877:web:9ea875314de19b70173ad4",
+            measurementId: "G-XNVCLD42Y4"
         };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        // State variables
+        let cart = {};
+        let menuItems = {};
+        let orderType = null; // Dine-in, Takeaway, Delivery
+        let selectedTableId = null;
+
+        const modalContainer = document.getElementById('modal-container');
+        const orderTypeModal = document.getElementById('order-type-modal');
+        const tableSelectionModal = document.getElementById('table-selection-modal');
+        const cartModal = document.getElementById('cart-modal');
+        const menuGrid = document.getElementById('menu-grid');
         
-        async function main() {
-            let db, auth;
-            try {
-                const app = initializeApp(firebaseConfig);
-                db = getFirestore(app);
-                auth = getAuth(app);
-                await signInAnonymously(auth);
-            } catch (error) {
-                console.error("Firebase init failed:", error);
-                document.body.innerHTML = `<div class="p-4 text-red-500 text-center"><strong>Firebase Connection Error.</strong><br>Please ensure "Anonymous" sign-in is enabled in your Firebase project's Authentication settings.</div>`;
-                return; // Stop execution if Firebase fails
-            }
-
-            // --- DOM Elements ---
-            const allDOMElements = {
-                orderTypeModal: document.getElementById('order-type-modal'), dineInBtn: document.getElementById('dine-in-btn'),
-                deliveryBtn: document.getElementById('delivery-btn'), mainContainer: document.getElementById('main-container'),
-                headerSubtitle: document.getElementById('header-subtitle'), deliveryAddressInput: document.getElementById('delivery-address'),
-                categoryFiltersContainer: document.getElementById('category-filters'), menuItemsContainer: document.getElementById('menu-items'),
-                cartCountEl: document.getElementById('cart-count'), viewCartBtn: document.getElementById('view-cart-btn'),
-                cartModal: document.getElementById('cart-modal'), closeCartBtn: document.getElementById('close-cart-btn'),
-                cartItemsContainer: document.getElementById('cart-items'), cartTotalEl: document.getElementById('cart-total'),
-                placeOrderBtn: document.getElementById('place-order-btn'), customerModal: document.getElementById('customer-modal'),
-                closeCustomerModalBtn: document.getElementById('close-customer-modal-btn'), whatsappNumberInput: document.getElementById('whatsapp-number'),
-                customerNameInput: document.getElementById('customer-name'), submitOrderBtn: document.getElementById('submit-order-btn'),
-                successMessage: document.getElementById('success-message'),
-            };
-            
-            // --- App State ---
-            let cart = []; let menu = []; let tableNumber = null;
-            let orderMode = ''; let activeCategory = 'All';
-            let isWaitingForNewName = false;
-
-            const initializeMenu = (mode) => {
-                orderMode = mode;
-                allDOMElements.orderTypeModal.classList.add('hidden');
-                allDOMElements.mainContainer.classList.remove('hidden');
-
-                if (orderMode === 'dine-in') {
-                    const urlParams = new URLSearchParams(window.location.search);
-                    tableNumber = urlParams.get('table');
-                    if (!tableNumber) {
-                        allDOMElements.mainContainer.innerHTML = `<div class="text-center p-8"><h1 class="text-2xl font-bold text-red-600">Error: Table Number Not Found</h1><p class="text-gray-600">Please scan a valid QR code.</p></div>`;
-                        return;
-                    }
-                    allDOMElements.headerSubtitle.innerHTML = `Welcome to Table <span class="font-bold">${tableNumber}</span>`;
-                } else {
-                    allDOMElements.headerSubtitle.textContent = 'Your Local Delivery Hub';
-                    allDOMElements.deliveryAddressInput.classList.remove('hidden');
-                }
-                listenToMenuChanges();
-            };
-            
-            const listenToMenuChanges = () => {
-                const menuQuery = query(collection(db, `menu`));
-                onSnapshot(menuQuery, (snapshot) => {
-                    menu = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                    renderCategories();
-                    renderMenu();
-                }, (error) => {
-                    console.error("Menu snapshot listener error: ", error);
-                    allDOMElements.menuItemsContainer.innerHTML = `<p class="text-red-500 text-center md:col-span-2">Error loading menu. Please try again later.</p>`;
-                });
-            };
-
-            const renderCategories = () => {
-                const categories = ['All', ...new Set(menu.map(item => item.category || 'Other'))];
-                allDOMElements.categoryFiltersContainer.innerHTML = categories.map(category => `
-                    <button class="category-btn px-4 py-2 rounded-full text-sm font-medium bg-gray-200 text-gray-700 whitespace-nowrap ${category === activeCategory ? 'active' : ''}" data-category="${category}">
-                        ${category}
-                    </button>
-                `).join('');
-            };
-
-            const renderMenu = () => {
-                const container = allDOMElements.menuItemsContainer;
-                const filteredMenu = activeCategory === 'All' ? menu : menu.filter(item => item.category === activeCategory);
-                container.innerHTML = filteredMenu.length === 0 ? `<p class="text-gray-500 text-center sm:col-span-2">No items available. Use the Menu Manager to add dishes.</p>` : '';
-                
-                filteredMenu.forEach(item => {
-                    const card = document.createElement('div');
-                    card.className = 'bg-white rounded-lg shadow menu-item-card overflow-hidden';
-                    const hasDiscount = item.discount > 0;
-                    const finalPrice = hasDiscount ? item.price * (1 - item.discount / 100) : item.price;
-
-                    card.innerHTML = `
-                        <img src="${item.imageUrl || 'https://placehold.co/400x300/F5F5F5/333333?text=No+Image'}" alt="${item.name}" class="menu-item-image">
-                        <div class="p-4 flex flex-col flex-grow">
-                            <h3 class="text-lg font-semibold text-yellow-900">${item.name}</h3>
-                            <p class="text-sm text-gray-500 mt-1 flex-grow">${item.description || ''}</p>
-                            <div class="flex justify-between items-center mt-4">
-                                <div>
-                                    <span class="text-lg font-bold text-gray-800">₹${finalPrice.toFixed(2)}</span>
-                                    ${hasDiscount ? `<span class="ml-2 text-sm text-gray-400 line-through">₹${item.price.toFixed(2)}</span>` : ''}
-                                </div>
-                                <button data-id="${item.id}" class="add-to-cart-btn bg-yellow-800 text-white px-4 py-2 rounded-lg hover:bg-yellow-900 transition text-sm font-semibold">Add</button>
-                            </div>
-                        </div>
-                    `;
-                    container.appendChild(card);
-                });
-            };
-
-            const addToCart = (itemId) => {
-                const menuItem = menu.find(item => item.id === itemId);
-                if (!menuItem) return;
-                const cartItem = cart.find(item => item.id === itemId);
-
-                const hasDiscount = menuItem.discount > 0;
-                const finalPrice = hasDiscount ? menuItem.price * (1 - menuItem.discount / 100) : menuItem.price;
-                
-                if (cartItem) {
-                    cartItem.quantity++;
-                } else {
-                    cart.push({ ...menuItem, quantity: 1, finalPrice });
-                }
-                updateCartUI();
-            };
-            
-            const removeFromCart = (itemId) => {
-                const cartItemIndex = cart.findIndex(item => item.id === itemId);
-                if (cartItemIndex > -1) {
-                    cart[cartItemIndex].quantity--;
-                    if (cart[cartItemIndex].quantity === 0) cart.splice(cartItemIndex, 1);
-                }
-                updateCartUI();
-            };
-
-            const updateCartUI = () => {
-                const { cartCountEl, cartItemsContainer, placeOrderBtn, cartTotalEl } = allDOMElements;
-                const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
-                cartCountEl.textContent = totalItems;
-                cartItemsContainer.innerHTML = cart.length === 0 ? '<p class="text-gray-500 text-center">Your cart is empty.</p>' : '';
-                placeOrderBtn.disabled = cart.length === 0;
-                placeOrderBtn.classList.toggle('opacity-50', cart.length === 0);
-                
-                let total = 0;
-                cart.forEach(item => {
-                    const itemEl = document.createElement('div');
-                    itemEl.className = 'flex justify-between items-center py-2';
-                    itemEl.innerHTML = `
-                        <div>
-                            <p class="font-semibold">${item.name}</p>
-                            <p class="text-sm text-gray-500">₹${item.finalPrice.toFixed(2)} x ${item.quantity}</p>
-                        </div>
-                        <div class="flex items-center gap-2">
-                            <span class="font-bold">₹${(item.finalPrice * item.quantity).toFixed(2)}</span>
-                            <button data-id="${item.id}" class="remove-from-cart-btn text-red-500 hover:text-red-700 font-bold text-lg">X</button>
-                        </div>
-                    `;
-                    cartItemsContainer.appendChild(itemEl);
-                    total += item.finalPrice * item.quantity;
-                });
-                cartTotalEl.textContent = `₹${total.toFixed(2)}`;
-            };
-            
-            const handlePlaceOrder = async () => {
-                const { whatsappNumberInput, deliveryAddressInput, customerNameInput, submitOrderBtn } = allDOMElements;
-
-                if (isWaitingForNewName) {
-                    const name = customerNameInput.value.trim();
-                    const number = whatsappNumberInput.value.trim();
-                    if (name) {
-                        customerNameInput.classList.remove('ring-2', 'ring-red-500');
-                        submitOrder(name, number, true);
-                    } else {
-                        customerNameInput.focus();
-                        customerNameInput.classList.add('ring-2', 'ring-red-500');
-                    }
-                    return;
-                }
-
-                const number = whatsappNumberInput.value.trim();
-                if (number.length < 10 || !/^\d+$/.test(number)) {
-                    whatsappNumberInput.focus();
-                    whatsappNumberInput.classList.add('ring-2', 'ring-red-500');
-                    return;
-                }
-                whatsappNumberInput.classList.remove('ring-2', 'ring-red-500');
-
-                if (orderMode === 'delivery' && deliveryAddressInput.value.trim().length < 10) {
-                     deliveryAddressInput.focus();
-                     deliveryAddressInput.classList.add('ring-2', 'ring-red-500');
-                     return;
-                }
-                deliveryAddressInput.classList.remove('ring-2', 'ring-red-500');
-
-                try {
-                    submitOrderBtn.disabled = true;
-                    submitOrderBtn.textContent = 'Checking...';
-                    const customerRef = doc(db, 'customers', number);
-                    const customerSnap = await getDoc(customerRef);
-
-                    if (customerSnap.exists()) {
-                        customerNameInput.value = customerSnap.data().name;
-                        customerNameInput.classList.add('hidden');
-                        await submitOrder(customerSnap.data().name, number);
-                    } else {
-                        isWaitingForNewName = true;
-                        customerNameInput.classList.remove('hidden');
-                        customerNameInput.focus();
-                        submitOrderBtn.textContent = 'Confirm & Order';
-                        submitOrderBtn.disabled = false;
-                    }
-                } catch (error) {
-                    console.error("Error checking customer: ", error);
-                    submitOrderBtn.disabled = false;
-                    submitOrderBtn.textContent = 'Confirm & Order';
-                }
-            };
-
-            const submitOrder = async (name, number, isNewCustomer = false) => {
-                if (cart.length === 0) return;
-                const { submitOrderBtn, whatsappNumberInput, customerNameInput, deliveryAddressInput, customerModal, cartModal, successMessage } = allDOMElements;
-                submitOrderBtn.disabled = true;
-                submitOrderBtn.textContent = 'Placing Order...';
-
-                const totalAmount = cart.reduce((sum, item) => sum + item.finalPrice * item.quantity, 0);
-                const simplifiedCart = cart.map(item => ({
-                    id: item.id, name: item.name, quantity: item.quantity,
-                    price: item.price, finalPrice: item.finalPrice, discount: item.discount || 0
-                }));
-                
-                let orderData = {
-                    orderType: orderMode, customerName: name, whatsappNumber: number,
-                    items: JSON.stringify(simplifiedCart), totalAmount: totalAmount,
-                    status: 'Pending', timestamp: serverTimestamp()
-                };
-
-                if (orderMode === 'dine-in') orderData.tableNumber = tableNumber;
-                else orderData.deliveryAddress = deliveryAddressInput.value.trim();
-
-                try {
-                    if (isNewCustomer) await setDoc(doc(db, 'customers', number), { name, whatsappNumber: number });
-                    await addDoc(collection(db, 'orders'), orderData);
-                    cart = []; updateCartUI();
-                    customerModal.classList.add('hidden'); cartModal.classList.add('hidden');
-                    successMessage.classList.remove('hidden');
-                    setTimeout(() => successMessage.classList.add('hidden'), 3000);
-                } catch (error) { console.error("Error placing order: ", error);
-                } finally {
-                    submitOrderBtn.disabled = false; submitOrderBtn.textContent = 'Confirm & Order';
-                    whatsappNumberInput.value = ''; customerNameInput.value = ''; deliveryAddressInput.value = '';
-                    customerNameInput.classList.add('hidden');
-                    isWaitingForNewName = false;
-                }
-            };
-
-            // --- Event Listeners ---
-            allDOMElements.dineInBtn.addEventListener('click', () => initializeMenu('dine-in'));
-            allDOMElements.deliveryBtn.addEventListener('click', () => initializeMenu('delivery'));
-            allDOMElements.categoryFiltersContainer.addEventListener('click', (e) => {
-                if (e.target.matches('.category-btn')) {
-                    activeCategory = e.target.dataset.category;
-                    renderCategories(); renderMenu();
-                }
-            });
-            allDOMElements.menuItemsContainer.addEventListener('click', e => e.target.classList.contains('add-to-cart-btn') && addToCart(e.target.dataset.id));
-            allDOMElements.cartItemsContainer.addEventListener('click', e => e.target.classList.contains('remove-from-cart-btn') && removeFromCart(e.target.dataset.id));
-            allDOMElements.viewCartBtn.addEventListener('click', () => allDOMElements.cartModal.classList.remove('hidden'));
-            allDOMElements.closeCartBtn.addEventListener('click', () => allDOMElements.cartModal.classList.add('hidden'));
-            allDOMElements.placeOrderBtn.addEventListener('click', () => allDOMElements.customerModal.classList.remove('hidden'));
-            allDOMElements.closeCustomerModalBtn.addEventListener('click', () => {
-                allDOMElements.customerModal.classList.add('hidden');
-                isWaitingForNewName = false;
-                allDOMElements.customerNameInput.classList.add('hidden');
-                allDOMElements.submitOrderBtn.textContent = 'Confirm & Order';
-            });
-            allDOMElements.submitOrderBtn.addEventListener('click', handlePlaceOrder);
+        // --- AUTHENTICATION ---
+        signInAnonymously(auth).catch(error => console.error("Anonymous sign-in failed:", error));
+        
+        // --- INITIALIZATION ---
+        function checkDeliveryHours() {
+            const deliveryBtn = document.getElementById('delivery-btn');
+            const deliveryInfo = document.getElementById('delivery-time-info');
+            const now = new Date();
+            const hour = now.getHours();
+            const isDeliveryTime = hour >= 17 && hour < 21; // 5 PM to 9 PM
+            deliveryBtn.disabled = !isDeliveryTime;
+            deliveryInfo.classList.toggle('hidden', isDeliveryTime);
         }
 
-        main();
+        window.onload = () => {
+            checkDeliveryHours();
+            fetchMenu();
+        };
+
+        // --- ORDER TYPE & TABLE SELECTION ---
+        document.querySelectorAll('.order-type-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                orderType = e.target.dataset.type;
+                if (orderType === 'Dine-in') {
+                    showModal(tableSelectionModal);
+                    listenForTableUpdates();
+                } else {
+                    modalContainer.classList.add('hidden');
+                }
+            });
+        });
+
+        function showModal(modal) {
+            [orderTypeModal, tableSelectionModal, cartModal].forEach(m => {
+                m.classList.add('hidden', 'scale-0');
+                m.classList.remove('scale-100');
+            });
+            modal.classList.remove('hidden', 'scale-0');
+            modal.classList.add('scale-100');
+            modalContainer.classList.remove('hidden');
+        }
+
+        function listenForTableUpdates() {
+            const tablesCollection = collection(db, 'tables');
+            onSnapshot(tablesCollection, (snapshot) => {
+                const tableGrid = document.getElementById('table-grid');
+                tableGrid.innerHTML = '';
+                const tables = [];
+                snapshot.forEach(doc => tables.push(doc.data()));
+                
+                // FIX: Made sorting more robust to handle missing or malformed tableNumber field.
+                tables.sort((a, b) => {
+                    const numA = (a.tableNumber && typeof a.tableNumber === 'string') ? parseInt(a.tableNumber.slice(1)) : 0;
+                    const numB = (b.tableNumber && typeof b.tableNumber === 'string') ? parseInt(b.tableNumber.slice(1)) : 0;
+                    return numA - numB;
+                });
+                
+                tables.forEach(table => {
+                    // Don't render if tableNumber is missing, preventing display of bad data.
+                    if (!table.tableNumber) return;
+
+                    const tableEl = document.createElement('button');
+                    tableEl.dataset.tableId = table.tableNumber;
+                    
+                    let bgColor = 'bg-gray-300';
+                    let textColor = 'text-gray-500';
+                    let statusText = table.status;
+                    let countdownText = '';
+                    let isDisabled = true;
+
+                    switch(table.status) {
+                        case 'Available':
+                            bgColor = 'bg-green-100 hover:bg-green-200';
+                            textColor = 'text-green-800';
+                            isDisabled = false;
+                            break;
+                        case 'Occupied':
+                            bgColor = 'bg-yellow-100 hover:bg-yellow-200';
+                            textColor = 'text-yellow-800';
+                            isDisabled = false; // Allow adding to order
+                             if (table.availableTime) {
+                                const freeIn = Math.round((table.availableTime.toDate() - new Date()) / 60000);
+                                if (freeIn > 0) countdownText = `<div class="text-xs mt-1">Free in ~${freeIn} min</div>`;
+                            }
+                            break;
+                        case 'Cleaning':
+                            bgColor = 'bg-blue-100';
+                            textColor = 'text-blue-800';
+                            break;
+                        case 'Blocked':
+                            bgColor = 'bg-red-100';
+                            textColor = 'text-red-800';
+                            break;
+                    }
+
+                    tableEl.className = `p-2 rounded-lg text-center transition ${bgColor} ${textColor} disabled:opacity-50 disabled:cursor-not-allowed`;
+                    tableEl.disabled = isDisabled;
+                    tableEl.innerHTML = `
+                        <div class="font-bold text-lg">${table.tableNumber}</div>
+                        <div class="text-sm">${statusText}</div>
+                        ${countdownText}
+                    `;
+                    tableEl.addEventListener('click', () => selectTable(table.tableNumber, table.status, table.orderId));
+                    tableGrid.appendChild(tableEl);
+                });
+            }, (error) => {
+                console.error("Error fetching tables: ", error);
+                alert("Could not load table information. Please check your connection or contact support.");
+            });
+        }
+        
+        async function selectTable(tableId, status, orderId) {
+            selectedTableId = tableId;
+            modalContainer.classList.add('hidden');
+            document.getElementById('dine-in-fabs').classList.remove('hidden');
+
+            if(status === 'Occupied' && orderId) {
+                // Fetch existing order and populate cart
+                const orderRef = doc(db, 'orders', orderId);
+                const orderSnap = await getDoc(orderRef);
+                if(orderSnap.exists()) {
+                    cart = JSON.parse(orderSnap.data().items || '{}');
+                    alert(`Table ${tableId} already has an order. Items have been added to your cart.`);
+                } else {
+                    cart = {};
+                }
+            } else {
+                cart = {};
+            }
+            updateCartView();
+        }
+
+        // --- MENU & CATEGORIES ---
+        async function fetchMenu() {
+            onSnapshot(collection(db, 'menu'), (snapshot) => {
+                menuGrid.innerHTML = '';
+                const categories = new Set(['All']);
+                const items = [];
+                snapshot.forEach(doc => {
+                    const item = { id: doc.id, ...doc.data() };
+                    menuItems[item.id] = item;
+                    items.push(item);
+                    if (item.category) categories.add(item.category);
+                });
+                renderCategories(Array.from(categories));
+                renderMenuItems(items);
+            }, (error) => {
+                 console.error("Error fetching menu: ", error);
+                 alert("Could not load the menu. Please check your connection or contact support.");
+            });
+        }
+
+        function renderCategories(categories) {
+            const filtersContainer = document.getElementById('category-filters');
+            filtersContainer.innerHTML = '';
+            categories.sort().forEach(category => {
+                const btn = document.createElement('button');
+                btn.className = 'category-filter-btn px-4 py-2 mr-2 text-sm font-medium rounded-full transition bg-white text-gray-700 shadow-sm border border-gray-200 hover:bg-gray-100';
+                if(category === 'All') btn.classList.add('bg-indigo-600', 'text-white', 'border-indigo-600');
+                btn.textContent = category;
+                btn.dataset.category = category;
+                btn.addEventListener('click', filterMenu);
+                filtersContainer.appendChild(btn);
+            });
+        }
+
+        function renderMenuItems(items, filter = 'All') {
+            menuGrid.innerHTML = '';
+            items
+              .filter(item => filter === 'All' || item.category === filter)
+              .forEach(item => {
+                const finalPrice = item.price - (item.price * (item.discount || 0) / 100);
+                const card = document.createElement('div');
+                card.className = 'menu-item-card bg-white rounded-xl shadow-md overflow-hidden flex flex-col transition-transform transform hover:-translate-y-1';
+                card.dataset.category = item.category;
+                card.innerHTML = `
+                    <div class="h-48 overflow-hidden">
+                        <img class="w-full h-full object-cover" src="${item.imageUrl || 'https://placehold.co/400x300'}" alt="${item.name}">
+                    </div>
+                    <div class="p-4 flex-grow flex flex-col">
+                        <h3 class="text-lg font-bold text-gray-800">${item.name}</h3>
+                        <p class="text-sm text-gray-500 mt-1 flex-grow">${item.description}</p>
+                        <div class="flex justify-between items-center mt-4">
+                            <p class="text-lg font-extrabold text-gray-900">
+                                ₹${finalPrice.toFixed(0)}
+                                ${item.discount > 0 ? `<span class="text-sm text-red-500 line-through ml-2">₹${item.price.toFixed(0)}</span>` : ''}
+                            </p>
+                            <button data-id="${item.id}" class="add-to-cart-btn bg-indigo-100 text-indigo-700 font-semibold px-4 py-2 rounded-full hover:bg-indigo-200 transition text-sm">Add</button>
+                        </div>
+                    </div>
+                `;
+                menuGrid.appendChild(card);
+            });
+             document.querySelectorAll('.add-to-cart-btn').forEach(btn => btn.addEventListener('click', () => addToCart(btn.dataset.id)));
+        }
+
+        function filterMenu(e) {
+            const selectedCategory = e.target.dataset.category;
+            document.querySelectorAll('.category-filter-btn').forEach(btn => {
+                btn.classList.remove('bg-indigo-600', 'text-white', 'border-indigo-600');
+                btn.classList.add('bg-white', 'text-gray-700', 'border-gray-200');
+            });
+            e.target.classList.add('bg-indigo-600', 'text-white', 'border-indigo-600');
+            
+            document.querySelectorAll('.menu-item-card').forEach(card => {
+                card.classList.toggle('hidden', selectedCategory !== 'All' && card.dataset.category !== selectedCategory);
+            });
+        }
+
+        // --- CART LOGIC ---
+        function addToCart(itemId) {
+            cart[itemId] = (cart[itemId] || 0) + 1;
+            updateCartView();
+        }
+
+        function updateCartView() {
+            const cartCount = document.getElementById('cart-count');
+            const cartItemsContainer = document.getElementById('cart-items');
+            const cartTotalEl = document.getElementById('cart-total');
+            
+            let totalItems = 0;
+            let totalPrice = 0;
+            cartItemsContainer.innerHTML = '';
+            
+            if (Object.keys(cart).length === 0) {
+                 cartItemsContainer.innerHTML = '<p class="text-center text-gray-500">Your cart is empty.</p>';
+            } else {
+                for (const itemId in cart) {
+                    const quantity = cart[itemId];
+                    if (quantity > 0) {
+                        const item = menuItems[itemId];
+                        const finalPrice = item.price - (item.price * (item.discount || 0) / 100);
+                        totalItems += quantity;
+                        totalPrice += finalPrice * quantity;
+                        
+                        const itemEl = document.createElement('div');
+                        itemEl.className = 'flex justify-between items-center py-3 border-b';
+                        itemEl.innerHTML = `
+                            <div>
+                                <p class="font-semibold">${item.name}</p>
+                                <p class="text-sm text-gray-600">₹${finalPrice.toFixed(0)}</p>
+                            </div>
+                            <div class="flex items-center gap-3">
+                                <button class="cart-quantity-btn" data-id="${itemId}" data-change="-1">-</button>
+                                <span>${quantity}</span>
+                                <button class="cart-quantity-btn" data-id="${itemId}" data-change="1">+</button>
+                            </div>
+                        `;
+                        cartItemsContainer.appendChild(itemEl);
+                    }
+                }
+            }
+
+            cartCount.textContent = totalItems;
+            cartCount.classList.toggle('hidden', totalItems === 0);
+            cartTotalEl.textContent = `₹${totalPrice.toFixed(2)}`;
+
+            document.querySelectorAll('.cart-quantity-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const { id, change } = e.target.dataset;
+                    cart[id] += parseInt(change);
+                    if (cart[id] === 0) delete cart[id];
+                    updateCartView();
+                });
+            });
+        }
+        
+        document.getElementById('view-cart-btn').addEventListener('click', () => {
+             showModal(cartModal);
+             resetCheckout();
+        });
+        
+        modalContainer.addEventListener('click', (e) => {
+            if (e.target === modalContainer) {
+                modalContainer.classList.add('hidden');
+            }
+        });
+
+
+        // --- CHECKOUT PROCESS ---
+        const checkoutBtn = document.getElementById('checkout-btn');
+        const placeOrderBtn = document.getElementById('place-order-btn');
+        const checkoutForm = document.getElementById('checkout-form');
+        const whatsappInput = document.getElementById('whatsapp-number');
+        const nameInput = document.getElementById('customer-name');
+        
+        function resetCheckout() {
+            checkoutForm.classList.add('hidden');
+            checkoutBtn.classList.remove('hidden');
+            placeOrderBtn.classList.add('hidden');
+        }
+
+        checkoutBtn.addEventListener('click', () => {
+            if (Object.keys(cart).length === 0) {
+                alert('Your cart is empty!');
+                return;
+            }
+            checkoutForm.classList.remove('hidden');
+            checkoutBtn.classList.add('hidden');
+            placeOrderBtn.classList.remove('hidden');
+        });
+
+        whatsappInput.addEventListener('blur', async () => {
+             const number = whatsappInput.value.trim();
+             if (number.length === 10) {
+                 const customerRef = doc(db, 'customers', number);
+                 const customerSnap = await getDoc(customerRef);
+                 if (customerSnap.exists()) {
+                     nameInput.value = customerSnap.data().name;
+                     nameInput.classList.add('hidden');
+                 } else {
+                     nameInput.value = '';
+                     nameInput.classList.remove('hidden');
+                 }
+             }
+        });
+
+        placeOrderBtn.addEventListener('click', async () => {
+            const whatsappNumber = whatsappInput.value.trim();
+            const customerName = nameInput.value.trim();
+            const isConfirmed = document.getElementById('confirm-order').checked;
+
+            if (whatsappNumber.length !== 10) { alert('Please enter a valid 10-digit WhatsApp number.'); return; }
+            if (nameInput.offsetParent !== null && !customerName) { alert('Please enter your name.'); return; }
+            if (!isConfirmed) { alert('Please confirm this is a genuine order.'); return; }
+            if (Object.keys(cart).length === 0) { alert('Your cart is empty.'); return; }
+            
+            placeOrderBtn.disabled = true;
+            placeOrderBtn.textContent = 'Placing Order...';
+
+            try {
+                // Prepare order data
+                let totalAmount = 0;
+                let orderItems = {};
+                for (const itemId in cart) {
+                    const item = menuItems[itemId];
+                    const quantity = cart[itemId];
+                    const finalPrice = item.price - (item.price * (item.discount || 0) / 100);
+                    totalAmount += finalPrice * quantity;
+                    orderItems[itemId] = {
+                        name: item.name,
+                        quantity: quantity,
+                        price: finalPrice
+                    };
+                }
+
+                const orderData = {
+                    customerName,
+                    whatsappNumber,
+                    items: JSON.stringify(orderItems), // Store items as JSON string
+                    totalAmount,
+                    status: 'Pending', // Pending, In Progress, Ready, Out for Delivery, Completed
+                    paymentStatus: 'Unpaid', // Unpaid, Paid
+                    orderType,
+                    tableId: selectedTableId,
+                    createdAt: serverTimestamp(),
+                    isHidden: false,
+                };
+                
+                // Use a batch write for atomicity
+                const batch = writeBatch(db);
+
+                // 1. Add/Update customer
+                const customerRef = doc(db, 'customers', whatsappNumber);
+                batch.set(customerRef, { name: customerName }, { merge: true });
+
+                // 2. Handle Dine-in table status and existing order update
+                if (orderType === 'Dine-in' && selectedTableId) {
+                    const tableRef = doc(db, 'tables', selectedTableId);
+                    const tableSnap = await getDoc(tableRef);
+                    const existingOrderId = tableSnap.data().orderId;
+
+                    if (existingOrderId) {
+                        // Update existing order
+                        const orderRef = doc(db, 'orders', existingOrderId);
+                        batch.update(orderRef, {
+                            items: JSON.stringify(orderItems),
+                            totalAmount: totalAmount
+                        });
+                    } else {
+                        // Create a new order and link it to the table
+                        const newOrderRef = doc(collection(db, 'orders'));
+                        batch.set(newOrderRef, orderData);
+                        batch.update(tableRef, { status: 'Occupied', orderId: newOrderRef.id });
+                    }
+                } else {
+                     // 3. Add new order for Takeaway/Delivery
+                    const newOrderRef = doc(collection(db, 'orders'));
+                    batch.set(newOrderRef, orderData);
+                }
+
+                await batch.commit();
+
+                alert('Order placed successfully!');
+                cart = {};
+                updateCartView();
+                modalContainer.classList.add('hidden');
+                
+                // If it was a dine-in new order, we stay on the page.
+                // Otherwise, reset to the beginning.
+                if (orderType !== 'Dine-in') {
+                    location.reload();
+                }
+
+            } catch (error) {
+                console.error('Error placing order:', error);
+                alert('Failed to place order. Please try again.');
+            } finally {
+                placeOrderBtn.disabled = false;
+                placeOrderBtn.textContent = 'Place Order';
+            }
+        });
+        
+        // --- DINE-IN HELP REQUESTS ---
+        document.getElementById('request-water-btn').addEventListener('click', () => sendHelpRequest('needsWater'));
+        document.getElementById('request-help-btn').addEventListener('click', () => sendHelpRequest('needsHelp'));
+
+        async function sendHelpRequest(type) {
+            if (!selectedTableId) return;
+            const btn = type === 'needsWater' ? document.getElementById('request-water-btn') : document.getElementById('request-help-btn');
+            btn.disabled = true;
+
+            const tableRef = doc(db, 'tables', selectedTableId);
+            try {
+                await updateDoc(tableRef, { [type]: true });
+                btn.classList.add('bg-green-500', 'hover:bg-green-500');
+                btn.innerHTML = `<svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>`;
+                setTimeout(() => {
+                    btn.disabled = false;
+                    btn.classList.remove('bg-green-500', 'hover:bg-green-500');
+                    btn.innerHTML = type === 'needsWater' ? `<svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" viewBox="0 0 20 20" fill="currentColor"><path d="M5 12a1 1 0 102 0V6.414l1.293 1.293a1 1 0 001.414-1.414l-3-3a1 1 0 00-1.414 0l-3 3a1 1 0 001.414 1.414L5 6.414V12zM15 8a1 1 0 10-2 0v5.586l-1.293-1.293a1 1 0 00-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L15 13.586V8z" /></svg>` : `<svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd" /></svg>`;
+                }, 3000);
+            } catch (error) {
+                console.error('Error sending request:', error);
+                btn.disabled = false;
+            }
+        }
     </script>
 </body>
 </html>
