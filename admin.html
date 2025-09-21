@@ -3,9 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Dashboard - Palette Cafe</title>
+    <title>Admin Dashboard - Artevia Palette</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
+        /* Custom Brand Color */
+        .bg-brand { background-color: #a43c1a; }
+        .hover\:bg-brand-dark:hover { background-color: #8a3216; }
+        .text-brand { color: #a43c1a; }
+
         .kanban-column {
             scroll-snap-align: start;
         }
@@ -24,9 +29,10 @@
 <body class="bg-gray-100 font-sans">
     
     <!-- Header -->
-    <header class="bg-white shadow-sm sticky top-0 z-20">
-        <div class="container mx-auto px-4 py-3">
-            <h1 class="text-2xl font-bold text-gray-800">Cafe Admin Dashboard</h1>
+    <header class="bg-brand shadow-md sticky top-0 z-20">
+        <div class="container mx-auto px-4 py-3 flex items-center gap-4">
+             <img src="https://raw.githubusercontent.com/Sarup098/artevia/main/Artevia_Palette_Logo.png" alt="Artevia Palette Logo" class="h-12 w-auto">
+            <h1 class="text-2xl font-bold text-white">Admin Dashboard</h1>
         </div>
     </header>
 
@@ -55,7 +61,7 @@
                 <h2 class="text-xl font-semibold text-gray-700">Live Order Tracker</h2>
                 <div>
                      <button id="view-log-btn" class="bg-gray-600 text-white px-4 py-2 rounded-md text-sm hover:bg-gray-700 mr-2">Today's Full Log</button>
-                    <button id="archive-btn" class="bg-blue-600 text-white px-4 py-2 rounded-md text-sm hover:bg-blue-700">Archive Paid Orders</button>
+                    <button id="archive-btn" class="bg-brand text-white px-4 py-2 rounded-md text-sm hover:bg-brand-dark">Archive Paid Orders</button>
                 </div>
             </div>
             <div class="kanban-container flex overflow-x-auto gap-4 pb-4">
@@ -74,7 +80,6 @@
     
     <!-- Table Management Modal -->
     <div id="table-modal" class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-lg shadow-xl z-40 w-full max-w-md hidden p-6">
-        <h3 id="table-modal-title" class="text-2xl font-bold mb-4">Manage Table T1</h3>
         <!-- Content injected by JS -->
     </div>
     
@@ -82,7 +87,7 @@
     <div id="log-modal" class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-lg shadow-xl z-40 w-full max-w-2xl hidden flex-col">
         <div class="p-4 border-b flex justify-between items-center">
              <h3 class="text-xl font-bold">Today's Full Order Log</h3>
-            <button id="close-log-btn" class="text-gray-500 hover:text-gray-800">&times;</button>
+            <button id="close-log-btn" class="text-gray-500 hover:text-gray-800 text-2xl">&times;</button>
         </div>
         <div id="log-content" class="p-4 max-h-[70vh] overflow-y-auto">
             <!-- Log content injected here -->
@@ -93,7 +98,8 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-app.js";
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-auth.js";
-        import { getFirestore, collection, onSnapshot, doc, updateDoc, writeBatch, query, where, Timestamp, getDocs } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-firestore.js";
+        // FIX: Added 'getDoc' to the import list below. It was missing.
+        import { getFirestore, collection, onSnapshot, doc, getDoc, updateDoc, writeBatch, query, where, Timestamp, getDocs } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyCuepnUYt_rDEffSraYycHxYrm5sDlXM6s",
@@ -109,37 +115,35 @@
         const auth = getAuth(app);
         const db = getFirestore(app);
         
-        let allTodayOrders = []; // To store all orders for the log, including archived
+        let allTodayOrders = [];
         const ORDER_STATUSES = ['Pending', 'In Progress', 'Ready', 'Out for Delivery', 'Completed'];
 
-        // --- AUTHENTICATION & INITIALIZATION ---
-        // Use onAuthStateChanged to ensure we only attach listeners after successful authentication.
-        // This prevents the "permission-denied" error on initial load.
         onAuthStateChanged(auth, (user) => {
             if (user) {
-                // User is signed in anonymously. Now it's safe to fetch data.
                 console.log("Admin authenticated with UID:", user.uid);
-                listenForTables();
-                listenForOrders();
-                setInterval(updateTimers, 10000);
-            } else {
-                console.log("Admin is not authenticated.");
+                initializeAdminPanel();
             }
         });
 
-        // Trigger the anonymous sign-in process.
         signInAnonymously(auth).catch(error => {
             console.error("Anonymous sign-in failed:", error);
-            alert("Could not connect to the server. Please check your internet connection and refresh the page.");
+            alert("Could not connect to the server.");
         });
+
+        function initializeAdminPanel() {
+            listenForTables();
+            listenForOrders();
+            setInterval(updateTimers, 10000);
+            attachStaticEventListeners();
+        }
 
         function listenForTables() {
             onSnapshot(collection(db, 'tables'), (snapshot) => {
                 const tableGrid = document.getElementById('admin-table-grid');
                 tableGrid.innerHTML = '';
-                 const tables = [];
+                const tables = [];
                 snapshot.forEach(doc => tables.push({id: doc.id, ...doc.data()}));
-                // FIX: Made sorting more robust to handle missing or malformed tableNumber field.
+                
                 tables.sort((a, b) => {
                     const numA = (a.tableNumber && typeof a.tableNumber === 'string') ? parseInt(a.tableNumber.slice(1)) : 0;
                     const numB = (b.tableNumber && typeof b.tableNumber === 'string') ? parseInt(b.tableNumber.slice(1)) : 0;
@@ -148,12 +152,14 @@
 
                 tables.forEach(table => {
                     const tableEl = document.createElement('button');
+                    tableEl.dataset.tableId = table.id;
                     let bgColor = 'bg-gray-200';
                     let statusText = table.status;
                     let countdownText = '';
                     
                     if (table.needsWater || table.needsHelp) {
                         tableEl.classList.add('animate-flash-red', 'border-2');
+                        console.log(`[Admin View] Received help request from table ${table.tableNumber}! Needs ${table.needsWater ? 'water' : 'help'}.`);
                     }
 
                     switch(table.status) {
@@ -164,7 +170,6 @@
                             if (table.cleaningUntil) {
                                 const cleanIn = Math.round((table.cleaningUntil.toDate() - new Date()) / 1000);
                                 if (cleanIn > 0) countdownText = `<div class="text-xs">${cleanIn}s left</div>`;
-                                else statusText = 'Available'; // Auto-switch if timer expired
                             }
                             break;
                         case 'Blocked': bgColor = 'bg-red-200'; break;
@@ -176,7 +181,6 @@
                         <div class="text-sm">${statusText}</div>
                         ${countdownText}
                     `;
-                    tableEl.onclick = () => openTableModal(table);
                     tableGrid.appendChild(tableEl);
                 });
             });
@@ -211,7 +215,6 @@
                     }
                 });
                 
-                // Update summary stats
                 document.getElementById('total-orders').textContent = totalOrders;
                 document.getElementById('total-revenue').textContent = `₹${totalRevenue.toFixed(0)}`;
                 document.getElementById('total-paid').textContent = `₹${totalPaid.toFixed(0)}`;
@@ -222,16 +225,17 @@
         }
         
         function renderKanban(orders) {
-            // Clear all columns first
             ORDER_STATUSES.forEach(status => {
-                const col = document.getElementById(`col-${status.replace(/ /g, '')}`);
+                const colId = `col-${status.replace(/ /g, '')}`;
+                const col = document.getElementById(colId);
                 if(col) col.querySelector('.order-list').innerHTML = '';
             });
             
             orders.sort((a, b) => a.createdAt.toDate() - b.createdAt.toDate());
 
             orders.forEach(order => {
-                const col = document.getElementById(`col-${order.status.replace(/ /g, '')}`);
+                const colId = `col-${order.status.replace(/ /g, '')}`;
+                const col = document.getElementById(colId);
                 if (!col) return;
 
                 const card = document.createElement('div');
@@ -257,10 +261,6 @@
                 `;
                 col.querySelector('.order-list').appendChild(card);
             });
-            
-            // Attach listeners after render
-            document.querySelectorAll('.payment-toggle-btn').forEach(b => b.onclick = togglePaymentStatus);
-            document.querySelectorAll('.next-step-btn').forEach(b => b.onclick = advanceOrderStatus);
         }
 
         function renderNextStepButton(order) {
@@ -274,40 +274,44 @@
             return '';
         }
 
-        // --- ACTIONS ---
-        async function togglePaymentStatus(e) {
-            const { id, current } = e.target.dataset;
-            const newStatus = current === 'Paid' ? 'Unpaid' : 'Paid';
-            await updateDoc(doc(db, 'orders', id), { paymentStatus: newStatus });
+        async function togglePaymentStatus(orderId, currentStatus) {
+            const newStatus = currentStatus === 'Paid' ? 'Unpaid' : 'Paid';
+            await updateDoc(doc(db, 'orders', orderId), { paymentStatus: newStatus });
         }
         
-        async function advanceOrderStatus(e) {
-            const { id, nextStatus } = e.target.dataset;
-            await updateDoc(doc(db, 'orders', id), { status: nextStatus });
+        async function advanceOrderStatus(orderId, nextStatus) {
+            await updateDoc(doc(db, 'orders', orderId), { status: nextStatus });
         }
 
         // --- TABLE MODAL LOGIC ---
         const modalBackdrop = document.getElementById('modal-backdrop');
         const tableModal = document.getElementById('table-modal');
+        let currentTable = null; // Store currently opened table data
 
-        function openTableModal(table) {
-            document.getElementById('table-modal-title').textContent = `Manage Table ${table.tableNumber}`;
-            
+        async function openTableModal(tableId) {
+            const tableRef = doc(db, 'tables', tableId);
+            const tableSnap = await getDoc(tableRef);
+            if (!tableSnap.exists()) {
+                console.error("Table not found!");
+                return;
+            }
+            currentTable = { id: tableSnap.id, ...tableSnap.data() };
+
             let helpRequestsHtml = '';
-            if (table.needsWater) {
+            if (currentTable.needsWater) {
                 helpRequestsHtml += `<button data-type="needsWater" class="resolve-btn w-full text-left bg-yellow-100 text-yellow-800 p-2 rounded mb-2 hover:bg-yellow-200">Resolve Water Request</button>`;
             }
-            if (table.needsHelp) {
+            if (currentTable.needsHelp) {
                 helpRequestsHtml += `<button data-type="needsHelp" class="resolve-btn w-full text-left bg-yellow-100 text-yellow-800 p-2 rounded mb-2 hover:bg-yellow-200">Resolve Help Request</button>`;
             }
             
             tableModal.innerHTML = `
-                <h3 class="text-2xl font-bold mb-4">Manage Table ${table.tableNumber}</h3>
+                <h3 class="text-2xl font-bold mb-4">Manage Table ${currentTable.tableNumber}</h3>
                 ${helpRequestsHtml}
                 <div class="mb-4">
                     <p class="font-semibold mb-2">Change Status:</p>
                     <div class="grid grid-cols-2 gap-2">
-                        ${['Available', 'Occupied', 'Blocked'].map(status => `<button data-status="${status}" class="status-change-btn p-2 rounded ${table.status === status ? 'bg-indigo-600 text-white' : 'bg-gray-200'}">${status}</button>`).join('')}
+                        ${['Available', 'Occupied', 'Blocked'].map(status => `<button data-status="${status}" class="status-change-btn p-2 rounded ${currentTable.status === status ? 'bg-brand text-white' : 'bg-gray-200'}">${status}</button>`).join('')}
                     </div>
                 </div>
                 <div class="mb-4">
@@ -323,50 +327,37 @@
             
             modalBackdrop.classList.remove('hidden');
             tableModal.classList.remove('hidden');
-
-            document.getElementById('close-table-modal').onclick = closeModals;
-            document.querySelectorAll('.status-change-btn').forEach(btn => btn.onclick = () => changeTableStatus(table, btn.dataset.status));
-            document.querySelectorAll('.time-set-btn').forEach(btn => btn.onclick = () => setTableTime(table.id, btn.dataset.mins));
-            document.querySelectorAll('.resolve-btn').forEach(btn => btn.onclick = () => resolveHelpRequest(table.id, btn.dataset.type));
         }
         
-        async function changeTableStatus(table, newStatus) {
-            const tableRef = doc(db, 'tables', table.id);
+        async function changeTableStatus(newStatus) {
+            const tableRef = doc(db, 'tables', currentTable.id);
             let updateData = { status: newStatus };
             
-            // AUTOMATED CLEANING CYCLE
-            if (table.status === 'Occupied' && newStatus === 'Available') {
+            if (currentTable.status === 'Occupied' && newStatus === 'Available') {
                 updateData = {
                     status: 'Cleaning',
                     orderId: null,
                     availableTime: null,
                     needsWater: false,
                     needsHelp: false,
-                    cleaningUntil: Timestamp.fromDate(new Date(Date.now() + 2 * 60000)) // 2 minutes from now
+                    cleaningUntil: Timestamp.fromDate(new Date(Date.now() + 2 * 60000))
                 };
             } else if (newStatus === 'Available') {
-                 updateData = {
-                    status: 'Available',
-                    orderId: null,
-                    availableTime: null,
-                    needsWater: false,
-                    needsHelp: false,
-                    cleaningUntil: null
-                };
+                 updateData = { status: 'Available', orderId: null, availableTime: null, needsWater: false, needsHelp: false, cleaningUntil: null };
             }
             
             await updateDoc(tableRef, updateData);
             closeModals();
         }
         
-        async function setTableTime(tableId, mins) {
+        async function setTableTime(mins) {
             const availableTime = new Date(Date.now() + mins * 60000);
-            await updateDoc(doc(db, 'tables', tableId), { availableTime: Timestamp.fromDate(availableTime) });
+            await updateDoc(doc(db, 'tables', currentTable.id), { availableTime: Timestamp.fromDate(availableTime) });
             closeModals();
         }
         
-        async function resolveHelpRequest(tableId, type) {
-            await updateDoc(doc(db, 'tables', tableId), { [type]: false });
+        async function resolveHelpRequest(type) {
+            await updateDoc(doc(db, 'tables', currentTable.id), { [type]: false });
             closeModals();
         }
         
@@ -374,13 +365,10 @@
             modalBackdrop.classList.add('hidden');
             tableModal.classList.add('hidden');
             document.getElementById('log-modal').classList.add('hidden');
+            currentTable = null;
         }
-        modalBackdrop.onclick = closeModals;
-        
-        // --- UTILITY & PERIODIC TASKS ---
+
         function updateTimers() {
-            // Check for tables whose cleaning cycle has finished
-            // FIX: Replaced the indexed query with a client-side filter to avoid manual index creation.
              onSnapshot(collection(db, 'tables'), (snapshot) => {
                 const batch = writeBatch(db);
                 let changesMade = false;
@@ -397,56 +385,87 @@
              });
         }
         
-        // --- LOGGING & ARCHIVING ---
-        document.getElementById('archive-btn').onclick = async () => {
-            if (!confirm('Are you sure you want to hide all paid, completed orders from the main board? They will still be visible in the full log.')) return;
+        // --- EVENT DELEGATION ---
+        function attachStaticEventListeners() {
+            // Main Kanban board listener
+            document.querySelector('.kanban-container').addEventListener('click', (e) => {
+                const paymentBtn = e.target.closest('.payment-toggle-btn');
+                const nextStepBtn = e.target.closest('.next-step-btn');
+                if (paymentBtn) {
+                    togglePaymentStatus(paymentBtn.dataset.id, paymentBtn.dataset.current);
+                }
+                if (nextStepBtn) {
+                    advanceOrderStatus(nextStepBtn.dataset.id, nextStepBtn.dataset.nextStatus);
+                }
+            });
 
-            const q = query(collection(db, 'orders'), where('status', '==', 'Completed'), where('paymentStatus', '==', 'Paid'));
-            const snapshot = await getDocs(q);
-            const batch = writeBatch(db);
-            snapshot.forEach(docSnap => batch.update(docSnap.ref, { isHidden: true }));
-            await batch.commit();
-            alert(`${snapshot.size} orders archived.`);
-        };
-        
-        document.getElementById('view-log-btn').onclick = () => {
-             const logContent = document.getElementById('log-content');
-             logContent.innerHTML = '';
-             
-             const groupedByCustomer = allTodayOrders.reduce((acc, order) => {
-                (acc[order.whatsappNumber] = acc[order.whatsappNumber] || []).push(order);
-                return acc;
-             }, {});
-             
-             for (const number in groupedByCustomer) {
-                 const orders = groupedByCustomer[number].sort((a,b) => b.createdAt.toDate() - a.createdAt.toDate());
-                 const customerName = orders[0].customerName;
+            // Table Grid listener
+            document.getElementById('admin-table-grid').addEventListener('click', (e) => {
+                const tableButton = e.target.closest('button');
+                if (tableButton && tableButton.dataset.tableId) {
+                    openTableModal(tableButton.dataset.tableId);
+                }
+            });
 
-                 const customerDiv = document.createElement('div');
-                 customerDiv.className = 'mb-6';
-                 customerDiv.innerHTML = `<h4 class="font-bold text-lg mb-2">${customerName} - ${number}</h4>`;
+            // Table Modal listener
+            tableModal.addEventListener('click', (e) => {
+                const statusBtn = e.target.closest('.status-change-btn');
+                const timeBtn = e.target.closest('.time-set-btn');
+                const resolveBtn = e.target.closest('.resolve-btn');
+                if (e.target.id === 'close-table-modal') closeModals();
+                if (statusBtn) changeTableStatus(statusBtn.dataset.status);
+                if (timeBtn) setTableTime(timeBtn.dataset.mins);
+                if (resolveBtn) resolveHelpRequest(resolveBtn.dataset.type);
+            });
+
+            document.getElementById('archive-btn').onclick = async () => {
+                const q = query(collection(db, 'orders'), where('status', '==', 'Completed'), where('paymentStatus', '==', 'Paid'));
+                const snapshot = await getDocs(q);
+                const batch = writeBatch(db);
+                snapshot.forEach(docSnap => batch.update(docSnap.ref, { isHidden: true }));
+                await batch.commit();
+                alert(`${snapshot.size} orders archived.`);
+            };
+            
+            document.getElementById('view-log-btn').onclick = () => {
+                 const logContent = document.getElementById('log-content');
+                 logContent.innerHTML = '';
+                 const groupedByCustomer = allTodayOrders.reduce((acc, order) => {
+                    (acc[order.whatsappNumber] = acc[order.whatsappNumber] || []).push(order);
+                    return acc;
+                 }, {});
                  
-                 orders.forEach(order => {
-                    const orderDiv = document.createElement('div');
-                    orderDiv.className = 'p-3 bg-gray-50 rounded border mb-2';
-                     orderDiv.innerHTML = `
-                        <div class="flex justify-between items-center text-sm">
-                            <span>${order.createdAt.toDate().toLocaleTimeString()} - ${order.orderType} ${order.tableId || ''}</span>
-                            <span>Status: ${order.status} / ${order.paymentStatus}</span>
-                            <span class="font-bold">₹${order.totalAmount.toFixed(0)}</span>
-                        </div>
-                     `;
-                     customerDiv.appendChild(orderDiv);
-                 });
-                 logContent.appendChild(customerDiv);
-             }
+                 for (const number in groupedByCustomer) {
+                     const orders = groupedByCustomer[number].sort((a,b) => b.createdAt.toDate() - a.createdAt.toDate());
+                     const customerName = orders[0].customerName;
+                     const customerDiv = document.createElement('div');
+                     customerDiv.className = 'mb-6';
+                     customerDiv.innerHTML = `<h4 class="font-bold text-lg mb-2">${customerName} - ${number}</h4>`;
+                     orders.forEach(order => {
+                        const orderDiv = document.createElement('div');
+                        orderDiv.className = 'p-3 bg-gray-50 rounded border mb-2';
+                         orderDiv.innerHTML = `
+                            <div class="flex justify-between items-center text-sm">
+                                <span>${order.createdAt.toDate().toLocaleTimeString()} - ${order.orderType} ${order.tableId || ''}</span>
+                                <span>Status: ${order.status} / ${order.paymentStatus}</span>
+                                <span class="font-bold">₹${order.totalAmount.toFixed(0)}</span>
+                            </div>
+                         `;
+                         customerDiv.appendChild(orderDiv);
+                     });
+                     logContent.appendChild(customerDiv);
+                 }
 
-             document.getElementById('log-modal').classList.remove('hidden');
-             modalBackdrop.classList.remove('hidden');
-        };
-        document.getElementById('close-log-btn').onclick = closeModals;
+                 document.getElementById('log-modal').classList.remove('hidden');
+                 modalBackdrop.classList.remove('hidden');
+            };
+
+            document.getElementById('close-log-btn').onclick = closeModals;
+            modalBackdrop.onclick = closeModals;
+        }
 
     </script>
 </body>
 </html>
+
 
