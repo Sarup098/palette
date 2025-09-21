@@ -3,288 +3,95 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Menu Manager - Artevia Cafe</title>
+    <title>Manual Menu Adder</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <style> body { font-family: 'Inter', sans-serif; } </style>
 </head>
-<body class="bg-gray-100">
+<body class="bg-gray-100 text-gray-800 font-sans">
 
-    <header class="bg-white shadow-md p-4">
-        <h1 class="text-3xl font-bold text-yellow-900">Menu Manager</h1>
-    </header>
-
-    <div class="container mx-auto p-4 md:p-8 grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <!-- Add/Edit Form Column -->
-        <div class="lg:col-span-1 bg-white p-6 rounded-lg shadow-lg">
-            <h2 id="form-title" class="text-2xl font-bold mb-4">Add New Item</h2>
-            <form id="menu-item-form" class="space-y-4">
-                <input type="hidden" id="item-id">
-                <div>
-                    <label for="item-name" class="block text-sm font-medium text-gray-700">Name</label>
-                    <input type="text" id="item-name" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-yellow-800 focus:border-yellow-800" required>
-                </div>
-                <div>
-                    <label for="item-description" class="block text-sm font-medium text-gray-700">Description</label>
-                    <textarea id="item-description" rows="3" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-yellow-800 focus:border-yellow-800"></textarea>
-                </div>
-                <div>
-                    <label for="item-category" class="block text-sm font-medium text-gray-700">Category</label>
-                    <input type="text" id="item-category" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-yellow-800 focus:border-yellow-800" placeholder="e.g., Momos, Soups, Main Course" required>
-                </div>
+    <div class="container mx-auto p-4 md:p-8 max-w-lg">
+        <div class="bg-white rounded-lg shadow-xl p-6">
+            <h1 class="text-2xl font-bold mb-4 text-center text-green-600">Manual Menu Adder</h1>
+            <p class="text-center text-gray-500 mb-6">Use this form to add items to your menu collection one by one.</p>
+            
+            <form id="add-item-form" class="space-y-4">
+                <input type="text" id="item-name" placeholder="Item Name (e.g., Cappuccino)" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" required>
+                
                 <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label for="item-price" class="block text-sm font-medium text-gray-700">Price (₹)</label>
-                        <input type="number" id="item-price" min="0" step="0.01" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-yellow-800 focus:border-yellow-800" required>
-                    </div>
-                    <div>
-                        <label for="item-discount" class="block text-sm font-medium text-gray-700">Discount (%)</label>
-                        <input type="number" id="item-discount" value="0" min="0" max="100" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-yellow-800 focus:border-yellow-800">
-                    </div>
+                    <input type="number" id="item-price" placeholder="Price (e.g., 160)" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" required>
+                    <input type="text" id="item-category" placeholder="Category (e.g., Coffee)" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" required>
                 </div>
-                <div>
-                    <label for="item-image" class="block text-sm font-medium text-gray-700">Image</label>
-                    <input type="file" id="item-image" accept="image/*" class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-yellow-100 file:text-yellow-800 hover:file:bg-yellow-200">
-                    <img id="image-preview" src="" alt="Image Preview" class="mt-2 rounded-md hidden h-24 w-24 object-cover"/>
-                    <div id="upload-progress" class="mt-2 w-full bg-gray-200 rounded-full h-2.5 hidden"><div class="bg-blue-600 h-2.5 rounded-full" style="width: 0%"></div></div>
-                </div>
-                <div class="flex items-center space-x-4 pt-2">
-                    <button type="submit" id="submit-btn" class="w-full bg-green-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-green-700 transition">Save Item</button>
-                    <button type="button" id="cancel-btn" class="w-full bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-lg hover:bg-gray-400 transition hidden">Cancel</button>
-                </div>
-            </form>
-        </div>
 
-        <!-- Menu List Column -->
-        <div class="lg:col-span-2 bg-white p-6 rounded-lg shadow-lg">
-            <h2 class="text-2xl font-bold mb-4">Current Menu</h2>
-            <div id="menu-list" class="space-y-3">
-                <!-- Menu items will be dynamically inserted here -->
-                <p class="text-gray-500">Loading menu...</p>
-            </div>
+                <textarea id="item-description" placeholder="Short Description" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" rows="3"></textarea>
+                
+                <input type="url" id="item-image-url" placeholder="Image URL (e.g., https://...)" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" required>
+                
+                <input type="number" id="item-discount" placeholder="Discount % (e.g., 10, or 0 for none)" value="0" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+
+                <button id="submit-btn" type="submit" class="w-full bg-green-600 text-white font-bold py-3 px-4 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition duration-300">
+                    Add Item to Menu
+                </button>
+            </form>
+            
+            <div id="status-message" class="mt-4 text-center"></div>
         </div>
     </div>
 
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getFirestore, collection, onSnapshot, doc, getDoc, addDoc, updateDoc, deleteDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-        import { getStorage, ref, uploadBytesResumable, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-storage.js";
-        import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-app.js";
+        import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-firestore.js";
 
-        // --- Firebase Config ---
         const firebaseConfig = {
             apiKey: "AIzaSyCuepnUYt_rDEffSraYycHxYrm5sDlXM6s",
             authDomain: "palette-orders.firebaseapp.com",
             projectId: "palette-orders",
-            storageBucket: "palette-orders.appspot.com",
+            storageBucket: "palette-orders.firebasestorage.app",
             messagingSenderId: "424044050877",
-            appId: "1:424044050877:web:2c67d2d065d3411e173ad4",
-            measurementId: "G-M5S8PYDFZ5"
+            appId: "1:424044050877:web:9ea8y5314de19b70173ad4",
+            measurementId: "G-XNVCLD42Y4"
         };
-        
-        let db, storage;
-        try {
-            const app = initializeApp(firebaseConfig);
-            db = getFirestore(app);
-            storage = getStorage(app);
-            const auth = getAuth(app);
-            await signInAnonymously(auth);
-        } catch (error) {
-            console.error("Firebase init failed:", error);
-            document.body.innerHTML = `<div class="p-4 text-red-500 text-center">Could not connect to service.</div>`;
-        }
 
-        // --- DOM Elements & State ---
-        const form = document.getElementById('menu-item-form');
-        const formTitle = document.getElementById('form-title');
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const menuCollection = collection(db, "menu");
+
+        const addItemForm = document.getElementById('add-item-form');
         const submitBtn = document.getElementById('submit-btn');
-        const cancelBtn = document.getElementById('cancel-btn');
-        const imagePreview = document.getElementById('image-preview');
-        const imageInput = document.getElementById('item-image');
-        const uploadProgress = document.getElementById('upload-progress');
-        const menuList = document.getElementById('menu-list');
+        const statusMessage = document.getElementById('status-message');
 
-        let currentEditId = null;
-        let currentImageUrl = null;
-        let currentImageFileName = null;
+        addItemForm.addEventListener('submit', async (e) => {
+            e.preventDefault(); // Prevent the form from reloading the page
 
-        // --- Form & UI Logic ---
-        const resetForm = () => {
-            form.reset();
-            currentEditId = null;
-            currentImageUrl = null;
-            currentImageFileName = null;
-            formTitle.textContent = 'Add New Item';
-            submitBtn.textContent = 'Save Item';
-            cancelBtn.classList.add('hidden');
-            imagePreview.classList.add('hidden');
-            uploadProgress.classList.add('hidden');
-            uploadProgress.firstElementChild.style.width = '0%';
-        };
-
-        const populateForm = (item) => {
-            form['item-id'].value = item.id;
-            form['item-name'].value = item.name;
-            form['item-description'].value = item.description || '';
-            form['item-category'].value = item.category;
-            form['item-price'].value = item.price;
-            form['item-discount'].value = item.discount || 0;
-            
-            currentEditId = item.id;
-            currentImageUrl = item.imageUrl || null;
-            currentImageFileName = item.imageFileName || null;
-            
-            if (item.imageUrl) {
-                imagePreview.src = item.imageUrl;
-                imagePreview.classList.remove('hidden');
-            } else {
-                imagePreview.classList.add('hidden');
-            }
-
-            formTitle.textContent = 'Edit Item';
-            submitBtn.textContent = 'Update Item';
-            cancelBtn.classList.remove('hidden');
-            window.scrollTo(0, 0);
-        };
-
-        const renderMenuList = (items) => {
-            // Sort items alphabetically by name
-            items.sort((a, b) => a.name.localeCompare(b.name));
-
-            menuList.innerHTML = items.length === 0 ? '<p class="text-gray-500">No menu items yet. Add one using the form!</p>' : '';
-            items.forEach(item => {
-                const itemEl = document.createElement('div');
-                itemEl.className = 'flex items-center justify-between p-3 bg-gray-50 rounded-lg border';
-                itemEl.innerHTML = `
-                    <div class="flex items-center gap-4">
-                        <img src="${item.imageUrl || 'https://placehold.co/100x100/F5F5F5/333333?text=N/A'}" alt="${item.name}" class="w-12 h-12 rounded-md object-cover">
-                        <div>
-                            <p class="font-semibold">${item.name} <span class="text-xs text-gray-500 font-normal">(${item.category})</span></p>
-                            <p class="text-sm text-gray-700">₹${item.price.toFixed(2)} ${item.discount > 0 ? `<span class="text-red-500">(${item.discount}% off)</span>` : ''}</p>
-                        </div>
-                    </div>
-                    <div class="flex space-x-2">
-                        <button data-id="${item.id}" class="edit-btn text-blue-600 hover:text-blue-800 p-2">Edit</button>
-                        <button data-id="${item.id}" data-image-filename="${item.imageFileName || ''}" class="delete-btn text-red-600 hover:text-red-800 p-2">Delete</button>
-                    </div>
-                `;
-                menuList.appendChild(itemEl);
-            });
-        };
-
-        // --- Firestore & Storage Logic ---
-        const menuCollectionRef = collection(db, 'menu');
-
-        onSnapshot(menuCollectionRef, snapshot => {
-            const items = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            renderMenuList(items);
-        });
-
-        const handleFormSubmit = async (e) => {
-            e.preventDefault();
             submitBtn.disabled = true;
+            submitBtn.textContent = 'Adding...';
+            statusMessage.textContent = '';
 
-            const file = imageInput.files[0];
-            let imageUrl = currentImageUrl;
-            let imageFileName = currentImageFileName;
-
-            if (file) {
-                // If editing and there's an old image, delete it first.
-                if (currentEditId && currentImageFileName) {
-                    const oldImageRef = ref(storage, `menu_images/${currentImageFileName}`);
-                    try {
-                        await deleteObject(oldImageRef);
-                    } catch (error) {
-                        console.warn("Old image not found, could be already deleted:", error);
-                    }
-                }
-                
-                imageFileName = `${Date.now()}-${file.name}`;
-                const storageRef = ref(storage, `menu_images/${imageFileName}`);
-                const uploadTask = uploadBytesResumable(storageRef, file);
-
-                uploadProgress.classList.remove('hidden');
-
-                imageUrl = await new Promise((resolve, reject) => {
-                    uploadTask.on('state_changed', 
-                        (snapshot) => {
-                            const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-                            uploadProgress.firstElementChild.style.width = progress + '%';
-                        }, 
-                        (error) => {
-                            console.error("Upload failed:", error);
-                            reject(error);
-                        }, 
-                        async () => {
-                            const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-                            resolve(downloadURL);
-                        }
-                    );
-                });
-            }
-
-            const itemData = {
-                name: form['item-name'].value,
-                description: form['item-description'].value,
-                category: form['item-category'].value,
-                price: parseFloat(form['item-price'].value),
-                discount: parseInt(form['item-discount'].value, 10) || 0,
-                imageUrl,
-                imageFileName,
-                lastUpdated: serverTimestamp()
+            const newItem = {
+                name: document.getElementById('item-name').value,
+                price: parseFloat(document.getElementById('item-price').value),
+                category: document.getElementById('item-category').value,
+                description: document.getElementById('item-description').value,
+                imageUrl: document.getElementById('item-image-url').value,
+                discount: parseInt(document.getElementById('item-discount').value) || 0
             };
-
+            
             try {
-                if (currentEditId) {
-                    const docRef = doc(db, 'menu', currentEditId);
-                    await updateDoc(docRef, itemData);
-                } else {
-                    itemData.createdAt = serverTimestamp();
-                    await addDoc(menuCollectionRef, itemData);
-                }
-                resetForm();
+                // Add a new document with a generated ID.
+                const docRef = await addDoc(menuCollection, newItem);
+                console.log("Document written with ID: ", docRef.id);
+
+                statusMessage.textContent = `"${newItem.name}" was added successfully!`;
+                statusMessage.className = 'mt-4 text-center text-green-600 font-bold';
+                
+                addItemForm.reset(); // Clear the form for the next item
+                document.getElementById('item-discount').value = 0; // Reset discount to 0
+
             } catch (error) {
-                console.error("Error saving item: ", error);
+                console.error("Error adding document: ", error);
+                statusMessage.textContent = 'An error occurred. Check the console.';
+                statusMessage.className = 'mt-4 text-center text-red-600';
             } finally {
                 submitBtn.disabled = false;
-            }
-        };
-
-        const handleMenuAction = async (e) => {
-            const { id, imageFilename } = e.target.dataset;
-            if (e.target.classList.contains('edit-btn')) {
-                 const docRef = doc(db, 'menu', id);
-                 const docSnap = await getDoc(docRef);
-                 if (docSnap.exists()) {
-                     populateForm({id: docSnap.id, ...docSnap.data()});
-                 }
-            }
-            if (e.target.classList.contains('delete-btn')) {
-                if (confirm('Are you sure you want to delete this item?')) {
-                    try {
-                        // Delete image from storage if it exists
-                        if (imageFilename && imageFilename !== "null") {
-                            const imageRef = ref(storage, `menu_images/${imageFilename}`);
-                            await deleteObject(imageRef);
-                        }
-                        // Delete document from Firestore
-                        await deleteDoc(doc(db, 'menu', id));
-                    } catch (error) {
-                        console.error("Error deleting item:", error);
-                    }
-                }
-            }
-        };
-
-        // --- Event Listeners ---
-        form.addEventListener('submit', handleFormSubmit);
-        cancelBtn.addEventListener('click', resetForm);
-        menuList.addEventListener('click', handleMenuAction);
-        imageInput.addEventListener('change', (e) => {
-            const file = e.target.files[0];
-            if (file) {
-                imagePreview.src = URL.createObjectURL(file);
-                imagePreview.classList.remove('hidden');
+                submitBtn.textContent = 'Add Item to Menu';
             }
         });
 
