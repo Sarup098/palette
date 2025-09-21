@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Dashboard - Artevia Palette</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- jsPDF Library for PDF generation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <style>
         /* Custom Brand Color */
         .bg-brand { background-color: #a43c1a; }
@@ -59,9 +61,10 @@
         <section>
              <div class="flex justify-between items-center mb-4">
                 <h2 class="text-xl font-semibold text-gray-700">Live Order Tracker</h2>
-                <div>
-                     <button id="view-log-btn" class="bg-gray-600 text-white px-4 py-2 rounded-md text-sm hover:bg-gray-700 mr-2">Today's Full Log</button>
+                <div class="flex items-center gap-2">
+                     <button id="view-log-btn" class="bg-gray-600 text-white px-4 py-2 rounded-md text-sm hover:bg-gray-700">Today's Full Log</button>
                     <button id="archive-btn" class="bg-brand text-white px-4 py-2 rounded-md text-sm hover:bg-brand-dark">Archive Paid Orders</button>
+                    <button id="download-pdf-btn" class="bg-green-600 text-white px-4 py-2 rounded-md text-sm hover:bg-green-700">Download Report</button>
                 </div>
             </div>
             <div class="kanban-container flex overflow-x-auto gap-4 pb-4">
@@ -100,6 +103,8 @@
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-auth.js";
         import { getFirestore, collection, onSnapshot, doc, getDoc, updateDoc, writeBatch, query, where, Timestamp, getDocs } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-firestore.js";
 
+        const { jsPDF } = window.jspdf;
+
         const firebaseConfig = {
             apiKey: "AIzaSyCuepnUYt_rDEffSraYycHxYrm5sDlXM6s",
             authDomain: "palette-orders.firebaseapp.com",
@@ -119,7 +124,6 @@
 
         onAuthStateChanged(auth, (user) => {
             if (user) {
-                console.log("Admin authenticated with UID:", user.uid);
                 initializeAdminPanel();
             }
         });
@@ -173,15 +177,12 @@
                     
                     if (table.needsWater || table.needsHelp) {
                         tableEl.classList.add('animate-flash-red', 'border-2');
-                        console.log(`[Admin View] Received help request from table ${table.tableNumber}! Needs ${table.needsWater ? 'water' : 'help'}.`);
                     }
 
                     switch(table.status) {
                         case 'Available': bgColor = 'bg-green-200'; break;
                         case 'Occupied': bgColor = 'bg-yellow-200'; break;
-                        case 'Cleaning':
-                            bgColor = 'bg-blue-200';
-                            break;
+                        case 'Cleaning': bgColor = 'bg-blue-200'; break;
                         case 'Blocked': bgColor = 'bg-red-200'; break;
                     }
 
@@ -318,7 +319,6 @@
             await updateDoc(doc(db, 'orders', orderId), { status: nextStatus });
         }
 
-        // --- TABLE MODAL LOGIC ---
         const modalBackdrop = document.getElementById('modal-backdrop');
         const tableModal = document.getElementById('table-modal');
         let currentTable = null; 
@@ -403,7 +403,6 @@
             currentTable = null;
         }
         
-        // --- EVENT DELEGATION ---
         function attachStaticEventListeners() {
             document.querySelector('.kanban-container').addEventListener('click', (e) => {
                 const paymentBtn = e.target.closest('.payment-toggle-btn');
@@ -440,6 +439,55 @@
                 snapshot.forEach(docSnap => batch.update(docSnap.ref, { isHidden: true }));
                 await batch.commit();
                 alert(`${snapshot.size} orders archived.`);
+            };
+
+            document.getElementById('download-pdf-btn').onclick = () => {
+                const doc = new jsPDF();
+                const today = new Date();
+                const formattedDate = today.toLocaleDateString('en-IN');
+                let y = 15;
+
+                doc.setFontSize(20);
+                doc.text("Artevia Palette - Daily Order Report", 105, y, { align: 'center' });
+                y += 5;
+                doc.setFontSize(12);
+                doc.text(`Date: ${formattedDate}`, 105, y, { align: 'center' });
+                y += 10;
+
+                allTodayOrders.sort((a,b) => a.createdAt.toDate() - b.createdAt.toDate()).forEach(order => {
+                    if (y > 270) {
+                        doc.addPage();
+                        y = 15;
+                    }
+
+                    const time = order.createdAt.toDate().toLocaleTimeString('en-IN');
+                    const customerInfo = `${order.customerName} (${order.whatsappNumber})`;
+                    const orderInfo = `${order.orderType} ${order.tableId || ''} - ${time}`;
+                    const items = Object.values(JSON.parse(order.items)).map(i => `${i.quantity}x ${i.name} (₹${i.price})`).join(', ');
+                    
+                    doc.setFontSize(14);
+                    doc.setFont(undefined, 'bold');
+                    doc.text(customerInfo, 14, y);
+                    y+= 6;
+                    
+                    doc.setFontSize(10);
+                    doc.setFont(undefined, 'normal');
+                    doc.text(orderInfo, 14, y);
+                    doc.text(`Total: ₹${order.totalAmount.toFixed(2)}`, 195, y, { align: 'right' });
+                    y += 6;
+                    
+                    doc.text(`Items: ${items}`, 14, y, { maxWidth: 180 });
+                    y += 10;
+                    
+                    doc.text(`Status: ${order.status} / ${order.paymentStatus}`, 14, y);
+                    y += 5;
+
+                    doc.setLineWidth(0.2);
+                    doc.line(14, y, 195, y);
+                    y += 8;
+                });
+
+                doc.save(`daily_orders_${today.toISOString().split('T')[0]}.pdf`);
             };
             
             document.getElementById('view-log-btn').onclick = () => {
