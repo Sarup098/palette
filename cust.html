@@ -94,7 +94,7 @@
              </div>
         </div>
 
-        <!-- NEW: Occupied Table Options Modal -->
+        <!-- Occupied Table Options Modal -->
         <div id="occupied-table-modal" class="bg-white rounded-xl shadow-2xl p-6 w-full max-w-sm text-center transform transition-all scale-0 hidden">
             <h2 class="text-3xl font-bold mb-2">Table Is Occupied</h2>
             <p class="text-gray-600 mb-6 text-lg">What would you like to do?</p>
@@ -113,7 +113,7 @@
                 <!-- Cart items will be here -->
              </div>
              <div class="p-6 bg-white border-t rounded-b-xl">
-                <!-- NEW: Biryani Reminder Container -->
+                <!-- Biryani Reminder Container -->
                 <div id="special-offer-container" class="mb-4"></div>
 
                 <div class="flex justify-between items-center font-bold text-3xl mb-4">
@@ -243,7 +243,7 @@
                         case 'Occupied':
                             bgColor = 'bg-yellow-100 hover:bg-yellow-200';
                             textColor = 'text-yellow-800';
-                            isDisabled = false; // MODIFIED: Always allow selection
+                            isDisabled = false;
                              if (table.availableTime) {
                                 const freeIn = Math.round((table.availableTime.toDate() - new Date()) / 60000);
                                 if (freeIn > 0) countdownText = `<div class="text-xs mt-1">Free in ~${freeIn} min</div>`;
@@ -262,7 +262,7 @@
                     tableEl.className = `p-2 rounded-lg text-center transition ${bgColor} ${textColor} disabled:opacity-50 disabled:cursor-not-allowed`;
                     tableEl.disabled = isDisabled;
                     tableEl.innerHTML = `
-                        <div class="font-bold text-lg">${table.tableNumber}</div>
+                        <div class="font-bold text-lg">${table.tableNumber} <span class="text-sm font-normal">(${table.capacity}p)</span></div>
                         <div class="text-sm">${statusText}</div>
                         ${countdownText}
                     `;
@@ -279,24 +279,20 @@
             document.getElementById('dine-in-fabs').classList.remove('hidden');
 
             if (status === 'Occupied') {
-                // NEW: Show options modal for occupied tables
                 showOccupiedTableOptions(orderId);
             } else {
-                // Standard flow for available tables
                 cart = {};
                 updateCartView();
                 modalContainer.classList.add('hidden');
             }
         }
         
-        // NEW FUNCTION: Handle options for an occupied table
         function showOccupiedTableOptions(orderId) {
             showModal(occupiedTableModal);
             
             const addToExistingBtn = document.getElementById('add-to-existing-order-btn');
             const startNewBtn = document.getElementById('start-new-order-btn');
             
-            // Clone and replace to remove old listeners
             const newAddToExistingBtn = addToExistingBtn.cloneNode(true);
             const newStartNewBtn = startNewBtn.cloneNode(true);
             addToExistingBtn.parentNode.replaceChild(newAddToExistingBtn, addToExistingBtn);
@@ -322,8 +318,6 @@
             };
         }
 
-
-        // --- MENU & CATEGORIES ---
         async function fetchMenu() {
             onSnapshot(collection(db, 'menu'), (snapshot) => {
                 menuGrid.innerHTML = '';
@@ -399,7 +393,6 @@
             });
         }
 
-        // --- CART LOGIC ---
         function addToCart(itemId) {
             cart[itemId] = (cart[itemId] || 0) + 1;
             updateCartView();
@@ -472,8 +465,6 @@
             }
         });
 
-
-        // --- CHECKOUT PROCESS ---
         const checkoutBtn = document.getElementById('checkout-btn');
         const placeOrderBtn = document.getElementById('place-order-btn');
         const checkoutForm = document.getElementById('checkout-form');
@@ -484,7 +475,6 @@
             checkoutForm.classList.add('hidden');
             checkoutBtn.classList.remove('hidden');
             placeOrderBtn.classList.add('hidden');
-            // Clear any special offers
             document.getElementById('special-offer-container').innerHTML = '';
         }
 
@@ -493,16 +483,15 @@
                 alert('Your cart is empty!');
                 return;
             }
-            checkAndShowBiryaniOffer(); // NEW: Check for Monday special
+            checkAndShowBiryaniOffer();
             checkoutForm.classList.remove('hidden');
             checkoutBtn.classList.add('hidden');
             placeOrderBtn.classList.remove('hidden');
         });
         
-        // NEW FUNCTION: Display Biryani offer on Mondays
         function checkAndShowBiryaniOffer() {
             const offerContainer = document.getElementById('special-offer-container');
-            const today = new Date().getDay(); // Sunday = 0, Monday = 1
+            const today = new Date().getDay();
             
             if (today === 1) {
                 offerContainer.innerHTML = `
@@ -515,7 +504,6 @@
                 offerContainer.innerHTML = '';
             }
         }
-
 
         whatsappInput.addEventListener('blur', async () => {
              const number = whatsappInput.value.trim();
@@ -582,9 +570,6 @@
                     const tableSnap = await getDoc(tableRef);
                     const existingOrderId = tableSnap.data().orderId;
                     
-                    // Logic to handle both adding to an existing order and creating a new one for an occupied table.
-                    // If the cart was loaded from an existing order, it will have the same items + new ones.
-                    // If it was a "new separate order", the cart was cleared and this will be a completely new order document.
                     if (existingOrderId && cartContainsExistingOrder(JSON.parse(tableSnap.data().items || '{}'))) {
                         const orderRef = doc(db, 'orders', existingOrderId);
                         batch.update(orderRef, {
@@ -594,7 +579,6 @@
                     } else {
                         const newOrderRef = doc(collection(db, 'orders'));
                         batch.set(newOrderRef, orderData);
-                        // Only link the order to the table if the table was previously available.
                         if (tableSnap.data().status === 'Available') {
                              batch.update(tableRef, { status: 'Occupied', orderId: newOrderRef.id });
                         }
@@ -624,8 +608,6 @@
             }
         });
         
-        // Helper function to check if the current cart is an extension of an existing one.
-        // This is a simplified check for the demo.
         function cartContainsExistingOrder(existingItems) {
             for(const itemId in existingItems) {
                 if(!cart[itemId] || cart[itemId] < existingItems[itemId].quantity) {
@@ -635,7 +617,6 @@
             return true;
         }
 
-        // --- DINE-IN HELP REQUESTS ---
         document.getElementById('request-water-btn').addEventListener('click', () => sendHelpRequest('needsWater'));
         document.getElementById('request-help-btn').addEventListener('click', () => sendHelpRequest('needsHelp'));
 
