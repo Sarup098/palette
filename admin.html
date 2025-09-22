@@ -51,11 +51,15 @@
         
         <!-- Table Management -->
         <section class="mb-8">
-            <h2 class="text-xl font-semibold mb-4 text-gray-700">Table Management</h2>
-            <div id="admin-table-grid" class="grid grid-cols-3 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8 gap-4">
+             <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-semibold text-gray-700">Table Management</h2>
+                <button id="manage-stock-btn" class="bg-blue-600 text-white px-4 py-2 rounded-md text-sm hover:bg-blue-700">Manage Stock</button>
+            </div>
+            <div id="admin-table-grid" class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-4">
                 <!-- Admin table view will be injected here -->
             </div>
         </section>
+
 
         <!-- Order Tracker -->
         <section>
@@ -84,6 +88,27 @@
     <!-- Table Management Modal -->
     <div id="table-modal" class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-lg shadow-xl z-40 w-full max-w-md hidden p-6">
         <!-- Content injected by JS -->
+    </div>
+
+    <!-- Stock Management Modal -->
+    <div id="stock-modal" class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-lg shadow-xl z-40 w-full max-w-lg hidden flex-col">
+        <div class="p-4 border-b flex justify-between items-center">
+             <h3 class="text-xl font-bold">Menu Stock Status</h3>
+            <button id="close-stock-modal" class="text-gray-500 hover:text-gray-800 text-2xl">&times;</button>
+        </div>
+        <div class="p-4 max-h-[70vh] overflow-y-auto">
+             <table class="w-full text-sm text-left text-gray-500">
+                <thead class="text-xs text-gray-700 uppercase bg-gray-50 sticky top-0">
+                    <tr>
+                        <th scope="col" class="px-2 py-3">Item</th>
+                        <th scope="col" class="px-2 py-3 text-center">Status</th>
+                    </tr>
+                </thead>
+                <tbody id="stock-status-table-body">
+                    <!-- Rows will be injected by JS -->
+                </tbody>
+            </table>
+        </div>
     </div>
     
      <!-- Full Log Modal -->
@@ -136,6 +161,7 @@
         function initializeAdminPanel() {
             listenForTables();
             listenForOrders();
+            listenForMenuStock();
             attachStaticEventListeners();
         }
 
@@ -175,7 +201,7 @@
                     let bgColor = 'bg-gray-200';
                     let statusText = table.status;
                     
-                    if (table.needsWater || table.needsHelp) {
+                    if (table.needsWater || table.needsHelp || table.needsBill) {
                         tableEl.classList.add('animate-flash-red', 'border-2');
                     }
 
@@ -207,6 +233,9 @@
                     }
                     if (table.needsHelp) {
                         alertsAndTimersHtml += `<div class="text-xs mt-1 font-bold bg-yellow-500 text-black px-1 rounded-sm w-full">HELP</div>`;
+                    }
+                    if (table.needsBill) {
+                        alertsAndTimersHtml += `<div class="text-xs mt-1 font-bold bg-red-500 text-white px-1 rounded-sm w-full">BILL</div>`;
                     }
                     
                     tableEl.className = `p-2 rounded-lg text-center transition ${bgColor} flex flex-col justify-start min-h-[90px]`;
@@ -257,6 +286,36 @@
                 document.getElementById('total-unpaid').textContent = `₹${totalUnpaid.toFixed(0)}`;
                 
                 renderKanban(activeOrders);
+            });
+        }
+
+        function listenForMenuStock() {
+            onSnapshot(collection(db, 'menu'), (snapshot) => {
+                const tableBody = document.getElementById('stock-status-table-body');
+                tableBody.innerHTML = '';
+                const menuItems = [];
+                snapshot.forEach(doc => menuItems.push({ id: doc.id, ...doc.data() }));
+                
+                menuItems.sort((a,b) => a.name.localeCompare(b.name)).forEach(item => {
+                    const row = document.createElement('tr');
+                    row.className = 'bg-white border-b';
+
+                    const currentStatus = item.stockStatus || 'in_stock';
+                    
+                    const statusButtons = `
+                        <div class="flex justify-center gap-1 text-xs font-semibold">
+                            <button data-id="${item.id}" data-status="in_stock" class="stock-status-btn px-2 py-1 rounded-md ${currentStatus === 'in_stock' ? 'bg-green-500 text-white' : 'bg-green-100 text-green-800'}">AVL</button>
+                            <button data-id="${item.id}" data-status="few_left" class="stock-status-btn px-2 py-1 rounded-md ${currentStatus === 'few_left' ? 'bg-yellow-500 text-white' : 'bg-yellow-100 text-yellow-800'}">FEW</button>
+                            <button data-id="${item.id}" data-status="sold_out" class="stock-status-btn px-2 py-1 rounded-md ${currentStatus === 'sold_out' ? 'bg-red-500 text-white' : 'bg-red-100 text-red-800'}">NOT AVL</button>
+                        </div>
+                    `;
+                    
+                    row.innerHTML = `
+                        <td class="px-2 py-2 font-medium text-gray-900 whitespace-nowrap">${item.name}</td>
+                        <td class="px-2 py-2">${statusButtons}</td>
+                    `;
+                    tableBody.appendChild(row);
+                });
             });
         }
         
@@ -315,6 +374,11 @@
             return '';
         }
 
+        async function updateStockStatus(itemId, newStatus) {
+            const itemRef = doc(db, 'menu', itemId);
+            await updateDoc(itemRef, { stockStatus: newStatus });
+        }
+
         async function togglePaymentStatus(orderId, currentStatus) {
             const newStatus = currentStatus === 'Paid' ? 'Unpaid' : 'Paid';
             await updateDoc(doc(db, 'orders', orderId), { paymentStatus: newStatus });
@@ -326,6 +390,7 @@
 
         const modalBackdrop = document.getElementById('modal-backdrop');
         const tableModal = document.getElementById('table-modal');
+        const stockModal = document.getElementById('stock-modal');
         let currentTable = null; 
 
         async function openTableModal(tableId) {
@@ -340,6 +405,9 @@
             }
             if (currentTable.needsHelp) {
                 helpRequestsHtml += `<button data-type="needsHelp" class="resolve-btn w-full text-left bg-yellow-100 text-yellow-800 p-2 rounded mb-2 hover:bg-yellow-200">Resolve Help Request</button>`;
+            }
+            if (currentTable.needsBill) {
+                helpRequestsHtml += `<button data-type="needsBill" class="resolve-btn w-full text-left bg-yellow-100 text-yellow-800 p-2 rounded mb-2 hover:bg-yellow-200">Resolve Bill Request</button>`;
             }
             
             tableModal.innerHTML = `
@@ -365,6 +433,11 @@
             modalBackdrop.classList.remove('hidden');
             tableModal.classList.remove('hidden');
         }
+
+        function openStockModal() {
+            modalBackdrop.classList.remove('hidden');
+            stockModal.classList.remove('hidden');
+        }
         
         async function changeTableStatus(newStatus) {
             const tableRef = doc(db, 'tables', currentTable.id);
@@ -372,15 +445,12 @@
             
             if (currentTable.status === 'Occupied' && newStatus === 'Available') {
                 updateData = {
-                    status: 'Cleaning',
-                    orderId: null,
-                    availableTime: null,
-                    needsWater: false,
-                    needsHelp: false,
+                    status: 'Cleaning', orderId: null, availableTime: null,
+                    needsWater: false, needsHelp: false, needsBill: false,
                     cleaningUntil: Timestamp.fromDate(new Date(Date.now() + 2 * 60000))
                 };
             } else if (newStatus === 'Available') {
-                 updateData = { status: 'Available', orderId: null, availableTime: null, needsWater: false, needsHelp: false, cleaningUntil: null };
+                 updateData = { status: 'Available', orderId: null, availableTime: null, needsWater: false, needsHelp: false, needsBill: false, cleaningUntil: null };
             }
             
             await updateDoc(tableRef, updateData);
@@ -401,16 +471,14 @@
         function closeModals() {
             modalBackdrop.classList.add('hidden');
             tableModal.classList.add('hidden');
+            stockModal.classList.add('hidden');
             document.getElementById('log-modal').classList.add('hidden');
             currentTable = null;
         }
 
         function sendWhatsAppBill(orderId) {
             const order = allTodayOrders.find(o => o.id === orderId);
-            if (!order) {
-                alert("Order not found!");
-                return;
-            }
+            if (!order) { alert("Order not found!"); return; }
 
             let message = `Hello ${order.customerName},\n\nHere is your bill from Artevia Palette:\n\n`;
             message += "--------------------------------\n";
@@ -434,15 +502,9 @@
                 const nextStepBtn = e.target.closest('.next-step-btn');
                 const whatsappBtn = e.target.closest('.whatsapp-btn');
 
-                if (paymentBtn) {
-                    togglePaymentStatus(paymentBtn.dataset.id, paymentBtn.dataset.current);
-                }
-                if (nextStepBtn) {
-                    advanceOrderStatus(nextStepBtn.dataset.id, nextStepBtn.dataset.nextStatus);
-                }
-                if (whatsappBtn) {
-                    sendWhatsAppBill(whatsappBtn.dataset.id);
-                }
+                if (paymentBtn) togglePaymentStatus(paymentBtn.dataset.id, paymentBtn.dataset.current);
+                if (nextStepBtn) advanceOrderStatus(nextStepBtn.dataset.id, nextStepBtn.dataset.nextStatus);
+                if (whatsappBtn) sendWhatsAppBill(whatsappBtn.dataset.id);
             });
 
             document.getElementById('admin-table-grid').addEventListener('click', (e) => {
@@ -461,6 +523,16 @@
                 if (timeBtn) setTableTime(timeBtn.dataset.mins);
                 if (resolveBtn) resolveHelpRequest(resolveBtn.dataset.type);
             });
+            
+            document.getElementById('stock-status-table-body').addEventListener('click', (e) => {
+                const statusButton = e.target.closest('.stock-status-btn');
+                if(statusButton) {
+                    updateStockStatus(statusButton.dataset.id, statusButton.dataset.status);
+                }
+            });
+
+            document.getElementById('manage-stock-btn').onclick = openStockModal;
+            document.getElementById('close-stock-modal').onclick = closeModals;
 
             document.getElementById('archive-btn').onclick = async () => {
                 const q = query(collection(db, 'orders'), where('status', '==', 'Completed'), where('paymentStatus', '==', 'Paid'));
