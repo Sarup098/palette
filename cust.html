@@ -26,6 +26,48 @@
             0% { transform: translateY(-50px); opacity: 0; }
             100% { transform: translateY(0); opacity: 1; }
         }
+
+        /* Styles for Progress Bar */
+        .progress-step {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+            flex-grow: 1;
+        }
+        .progress-step:not(:last-child)::after {
+            content: '';
+            position: absolute;
+            top: 1.25rem; /* center of the circle */
+            left: 50%;
+            height: 4px;
+            width: 100%;
+            background-color: #e5e7eb; /* gray-200 */
+            z-index: 0;
+            transition: background-color 0.3s ease-in-out;
+        }
+        .progress-circle {
+            width: 2.5rem;
+            height: 2.5rem;
+            border-radius: 9999px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1;
+            transition: background-color 0.3s;
+        }
+        .progress-step.active .progress-circle {
+            background-color: #a43c1a; /* bg-brand */
+        }
+        /* FIX: Correctly color the connecting line when a step is active */
+         .progress-step.active-line:not(:last-child)::after {
+            background-color: #a43c1a; /* bg-brand */
+        }
+        .progress-step.active .progress-label {
+            font-weight: 700;
+            color: #1f2937; /* gray-800 */
+        }
+
     </style>
 </head>
 <body class="bg-gray-100 font-sans">
@@ -75,7 +117,7 @@
     <div id="modal-container" class="fixed inset-0 bg-black bg-opacity-60 z-40 flex items-center justify-center p-4">
         
         <!-- Order Type Modal -->
-        <div id="order-type-modal" class="bg-white rounded-xl shadow-2xl p-6 w-full max-w-sm text-center transform transition-all scale-100">
+        <div id="order-type-modal" class="bg-white rounded-xl shadow-2xl p-6 w-full max-w-sm text-center transform transition-all scale-0">
             <h2 class="text-4xl font-bold mb-2">Welcome!</h2>
             <p class="text-gray-600 mb-6 text-xl">How would you like to order?</p>
             <div class="flex flex-col gap-4">
@@ -83,6 +125,25 @@
                 <button data-type="Takeaway" class="order-type-btn w-full bg-brand text-white text-xl font-bold py-4 rounded-lg hover:bg-brand-dark transition">Takeaway</button>
                 <button id="delivery-btn" data-type="Delivery" class="order-type-btn w-full bg-brand text-white text-xl font-bold py-4 rounded-lg hover:bg-brand-dark transition disabled:bg-gray-400 disabled:cursor-not-allowed">Delivery</button>
                 <p id="delivery-time-info" class="text-xs text-gray-500 mt-1 hidden">(Available 5 PM - 9 PM)</p>
+            </div>
+        </div>
+        
+        <!-- Order Status Modal -->
+        <div id="order-status-modal" class="bg-white rounded-xl shadow-2xl p-6 w-full max-w-md text-center transform transition-all scale-0 hidden">
+            <h2 class="text-3xl font-bold mb-2">Your Order Status</h2>
+            <p class="text-gray-600 mb-6">Your order is currently in progress.</p>
+            
+            <div id="progress-bar" class="flex justify-between items-start mb-8 w-full">
+                <!-- Progress steps will be injected here -->
+            </div>
+            
+            <div id="status-order-items" class="text-left mb-6 max-h-40 overflow-y-auto border p-2 rounded-md">
+                <!-- Current order items -->
+            </div>
+
+            <div class="flex flex-col gap-4">
+                <button id="add-more-items-btn" class="w-full bg-brand text-white text-xl font-bold py-4 rounded-lg hover:bg-brand-dark transition">Add More Items</button>
+                <button id="start-fresh-order-btn" class="w-full bg-gray-600 text-white text-lg font-semibold py-3 rounded-lg hover:bg-gray-700 transition">Start a New Order Anyway</button>
             </div>
         </div>
 
@@ -137,7 +198,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-app.js";
         import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-auth.js";
-        import { getFirestore, collection, onSnapshot, doc, getDoc, setDoc, updateDoc, addDoc, query, where, getDocs, writeBatch, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-firestore.js";
+        import { getFirestore, collection, onSnapshot, doc, getDoc, setDoc, updateDoc, addDoc, query, where, getDocs, writeBatch, serverTimestamp, orderBy, limit } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-firestore.js";
         
         const firebaseConfig = {
             apiKey: "AIzaSyCuepnUYt_rDEffSraYycHxYrm5sDlXM6s",
@@ -161,15 +222,14 @@
 
         const modalContainer = document.getElementById('modal-container');
         const orderTypeModal = document.getElementById('order-type-modal');
+        const orderStatusModal = document.getElementById('order-status-modal');
         const tableSelectionModal = document.getElementById('table-selection-modal');
         const occupiedTableModal = document.getElementById('occupied-table-modal');
         const cartModal = document.getElementById('cart-modal');
         const menuGrid = document.getElementById('menu-grid');
         
-        // --- AUTHENTICATION ---
         signInAnonymously(auth).catch(error => console.error("Anonymous sign-in failed:", error));
         
-        // --- INITIALIZATION ---
         function checkDeliveryHours() {
             const deliveryBtn = document.getElementById('delivery-btn');
             const deliveryInfo = document.getElementById('delivery-time-info');
@@ -180,12 +240,88 @@
             deliveryInfo.classList.toggle('hidden', isDeliveryTime);
         }
 
+        async function checkForActiveOrder() {
+            const lastNumber = localStorage.getItem('customerWhatsapp');
+            if (!lastNumber) {
+                showModal(orderTypeModal);
+                return;
+            }
+            
+            // PERMANENT FIX: This query is simple enough for automatic indexing.
+            const q = query(
+                collection(db, 'orders'), 
+                where('whatsappNumber', '==', lastNumber)
+            );
+
+            try {
+                const querySnapshot = await getDocs(q);
+                
+                const orders = [];
+                querySnapshot.forEach(doc => {
+                    orders.push({ id: doc.id, ...doc.data() });
+                });
+
+                const activeOrder = orders
+                    .filter(order => order.status !== 'Completed') 
+                    .sort((a, b) => b.createdAt.toDate() - a.createdAt.toDate())
+                    [0];
+
+                if (activeOrder) {
+                    showOrderStatus(activeOrder);
+                } else {
+                    showModal(orderTypeModal);
+                }
+            } catch (error) {
+                console.error("Error checking for active order:", error);
+                showModal(orderTypeModal);
+            }
+        }
+
+        function showOrderStatus(order) {
+            const progressBar = document.getElementById('progress-bar');
+            const itemsContainer = document.getElementById('status-order-items');
+            const statuses = ['Pending', 'In Progress', 'Ready', 'Out for Delivery'];
+            const currentStatusIndex = statuses.indexOf(order.status);
+
+            // FIX: Correctly apply active-line class to show progress
+            progressBar.innerHTML = statuses.map((status, index) => `
+                <div class="progress-step ${index <= currentStatusIndex ? 'active' : ''} ${index < currentStatusIndex ? 'active-line' : ''}">
+                    <div class="progress-circle bg-gray-200">
+                        ${index <= currentStatusIndex ? `<svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>` : ''}
+                    </div>
+                    <p class="progress-label text-xs text-gray-500 mt-2">${status}</p>
+                </div>
+            `).join('');
+            
+            itemsContainer.innerHTML = Object.values(JSON.parse(order.items)).map(item => `
+                <p>${item.quantity} x ${item.name}</p>
+            `).join('');
+
+            document.getElementById('add-more-items-btn').onclick = () => {
+                cart = JSON.parse(order.items || '{}');
+                orderType = order.orderType;
+                selectedTableId = order.tableId;
+                if (orderType === 'Dine-in') {
+                    document.getElementById('dine-in-fabs').classList.remove('hidden');
+                }
+                updateCartView();
+                modalContainer.classList.add('hidden');
+            };
+
+            document.getElementById('start-fresh-order-btn').onclick = () => {
+                localStorage.removeItem('customerWhatsapp');
+                showModal(orderTypeModal);
+            };
+
+            showModal(orderStatusModal);
+        }
+
         window.onload = () => {
             checkDeliveryHours();
             fetchMenu();
+            checkForActiveOrder();
         };
 
-        // --- ORDER TYPE & TABLE SELECTION ---
         document.querySelectorAll('.order-type-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 orderType = e.target.dataset.type;
@@ -199,7 +335,7 @@
         });
 
         function showModal(modal) {
-            [orderTypeModal, tableSelectionModal, cartModal, occupiedTableModal].forEach(m => {
+            [orderTypeModal, tableSelectionModal, cartModal, occupiedTableModal, orderStatusModal].forEach(m => {
                 m.classList.add('hidden', 'scale-0');
                 m.classList.remove('scale-100');
             });
@@ -522,6 +658,7 @@
 
         placeOrderBtn.addEventListener('click', async () => {
             const whatsappNumber = whatsappInput.value.trim();
+            localStorage.setItem('customerWhatsapp', whatsappNumber);
             const customerName = nameInput.value.trim();
             const isConfirmed = document.getElementById('confirm-order').checked;
 
@@ -594,11 +731,8 @@
                 cart = {};
                 updateCartView();
                 modalContainer.classList.add('hidden');
+                checkForActiveOrder();
                 
-                if (orderType !== 'Dine-in') {
-                    location.reload();
-                }
-
             } catch (error) {
                 console.error('Error placing order:', error);
                 alert('Failed to place order. Please try again.');
@@ -624,12 +758,10 @@
             if (!selectedTableId) return;
             const btn = type === 'needsWater' ? document.getElementById('request-water-btn') : document.getElementById('request-help-btn');
             btn.disabled = true;
-            console.log(`[Customer View] Sending '${type}' request for table ${selectedTableId}...`);
 
             const tableRef = doc(db, 'tables', selectedTableId);
             try {
                 await updateDoc(tableRef, { [type]: true });
-                console.log(`[Customer View] Successfully sent request for table ${selectedTableId}.`);
                 btn.classList.add('bg-green-500', 'hover:bg-green-500');
                 btn.innerHTML = `<svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>`;
                 setTimeout(() => {
