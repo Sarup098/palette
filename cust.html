@@ -59,8 +59,7 @@
         .progress-step.active .progress-circle {
             background-color: #a43c1a; /* bg-brand */
         }
-        /* FIX: Correctly color the connecting line when a step is active */
-         .progress-step.active-line:not(:last-child)::after {
+        .progress-step.active-line:not(:last-child)::after {
             background-color: #a43c1a; /* bg-brand */
         }
         .progress-step.active .progress-label {
@@ -74,8 +73,9 @@
 
     <!-- Main Container -->
     <div class="container mx-auto max-w-4xl p-2 sm:p-4">
-        <header class="text-center my-4 flex flex-col items-center bg-brand text-white py-4 rounded-xl shadow-lg">
+        <header class="text-center my-4 flex flex-col items-center bg-brand text-white py-4 rounded-xl shadow-lg relative">
             <img src="https://raw.githubusercontent.com/Sarup098/artevia/main/Artevia_Palette_Logo.png" alt="Artevia Palette Logo" class="h-32 w-auto object-contain">
+            <button id="track-order-btn" class="absolute top-4 right-4 bg-white/20 text-white font-semibold px-4 py-2 rounded-lg hover:bg-white/30 transition text-sm">Track Order</button>
         </header>
 
         <!-- Category Filters -->
@@ -90,24 +90,25 @@
     </div>
 
     <!-- Floating Action Buttons Container -->
-    <div id="floating-buttons-container" class="fixed bottom-4 right-4 z-30 w-36">
+    <div id="floating-buttons-container" class="fixed bottom-4 right-4 left-4 z-30">
         <!-- Dine-in specific buttons -->
-        <div id="dine-in-fabs" class="flex flex-col items-center gap-2 mb-2 hidden">
-            <button id="request-water-btn" class="bg-blue-500 text-white w-full h-12 rounded-lg shadow-lg flex items-center justify-center gap-2 hover:bg-blue-600 transition-transform transform hover:scale-105">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 20 20" fill="currentColor"><path d="M5 12a1 1 0 102 0V6.414l1.293 1.293a1 1 0 001.414-1.414l-3-3a1 1 0 00-1.414 0l-3 3a1 1 0 001.414 1.414L5 6.414V12zM15 8a1 1 0 10-2 0v5.586l-1.293-1.293a1 1 0 00-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L15 13.586V8z" /></svg>
+        <div id="dine-in-fabs" class="flex items-center justify-between gap-2 mb-2 hidden">
+            <button id="request-water-btn" class="flex-1 bg-white text-gray-800 h-12 rounded-lg shadow-lg flex items-center justify-center gap-2 hover:bg-gray-200 transition-transform transform hover:scale-105">
                 <span class="font-semibold">Water</span>
             </button>
-            <button id="request-help-btn" class="bg-yellow-500 text-white w-full h-12 rounded-lg shadow-lg flex items-center justify-center gap-2 hover:bg-yellow-600 transition-transform transform hover:scale-105">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd" /></svg>
+            <button id="request-help-btn" class="flex-1 bg-white text-gray-800 h-12 rounded-lg shadow-lg flex items-center justify-center gap-2 hover:bg-gray-200 transition-transform transform hover:scale-105">
                 <span class="font-semibold">Help</span>
+            </button>
+            <button id="request-bill-btn" class="flex-1 bg-white text-gray-800 h-12 rounded-lg shadow-lg flex items-center justify-center gap-2 hover:bg-gray-200 transition-transform transform hover:scale-105">
+                 <span class="font-semibold">Request Bill</span>
             </button>
         </div>
         <!-- Main Cart Button -->
-        <div id="cart-fab">
-            <button id="view-cart-btn" class="bg-brand text-white w-full h-16 rounded-xl shadow-lg flex items-center justify-center hover:bg-brand-dark transition-transform transform hover:scale-105 text-lg font-bold gap-2">
-                <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
-                <span>Cart</span>
-                <span id="cart-count" class="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full h-6 w-6 flex items-center justify-center border-2 border-white">0</span>
+        <div id="cart-fab" class="hidden">
+            <button id="view-cart-btn" class="bg-brand text-white w-full h-16 rounded-xl shadow-lg flex items-center justify-between px-4 hover:bg-brand-dark transition-transform transform hover:scale-105 text-lg font-bold gap-2">
+                <span id="cart-item-count-text" class="text-sm"></span>
+                <span class="font-bold">View Cart</span>
+                <span id="cart-total-preview" class="font-semibold"></span>
             </button>
         </div>
     </div>
@@ -128,6 +129,14 @@
             </div>
         </div>
         
+        <!-- Track Order Modal -->
+        <div id="track-order-modal" class="bg-white rounded-xl shadow-2xl p-6 w-full max-w-sm text-center transform transition-all scale-0 hidden">
+            <h2 class="text-3xl font-bold mb-2">Track Your Order</h2>
+            <p class="text-gray-600 mb-6">Enter the WhatsApp number used to place the order.</p>
+            <input type="tel" id="track-whatsapp-number" class="w-full p-4 border rounded-md mb-3 text-xl" placeholder="10-Digit Number" maxlength="10">
+            <button id="track-submit-btn" class="w-full bg-brand text-white text-xl font-bold py-4 rounded-lg hover:bg-brand-dark transition">Find Order</button>
+        </div>
+
         <!-- Order Status Modal -->
         <div id="order-status-modal" class="bg-white rounded-xl shadow-2xl p-6 w-full max-w-md text-center transform transition-all scale-0 hidden">
             <h2 class="text-3xl font-bold mb-2">Your Order Status</h2>
@@ -217,16 +226,17 @@
         // State variables
         let cart = {};
         let menuItems = {};
-        let orderType = null; // Dine-in, Takeaway, Delivery
+        let orderType = null;
         let selectedTableId = null;
+        let activeOrderListener = null;
 
         const modalContainer = document.getElementById('modal-container');
         const orderTypeModal = document.getElementById('order-type-modal');
         const orderStatusModal = document.getElementById('order-status-modal');
+        const trackOrderModal = document.getElementById('track-order-modal');
         const tableSelectionModal = document.getElementById('table-selection-modal');
         const occupiedTableModal = document.getElementById('occupied-table-modal');
         const cartModal = document.getElementById('cart-modal');
-        const menuGrid = document.getElementById('menu-grid');
         
         signInAnonymously(auth).catch(error => console.error("Anonymous sign-in failed:", error));
         
@@ -235,55 +245,65 @@
             const deliveryInfo = document.getElementById('delivery-time-info');
             const now = new Date();
             const hour = now.getHours();
-            const isDeliveryTime = hour >= 17 && hour < 21; // 5 PM to 9 PM
+            const isDeliveryTime = hour >= 17 && hour < 21;
             deliveryBtn.disabled = !isDeliveryTime;
             deliveryInfo.classList.toggle('hidden', isDeliveryTime);
         }
 
-        async function checkForActiveOrder() {
-            const lastNumber = localStorage.getItem('customerWhatsapp');
-            if (!lastNumber) {
-                showModal(orderTypeModal);
+        async function findAndTrackOrder(number) {
+            if (!number || number.length !== 10) {
+                alert("Please enter a valid 10-digit number.");
                 return;
             }
             
-            // PERMANENT FIX: This query is simple enough for automatic indexing.
             const q = query(
                 collection(db, 'orders'), 
-                where('whatsappNumber', '==', lastNumber)
+                where('whatsappNumber', '==', number)
             );
 
             try {
                 const querySnapshot = await getDocs(q);
-                
                 const orders = [];
-                querySnapshot.forEach(doc => {
-                    orders.push({ id: doc.id, ...doc.data() });
-                });
-
+                querySnapshot.forEach(doc => orders.push({ id: doc.id, ...doc.data() }));
                 const activeOrder = orders
                     .filter(order => order.status !== 'Completed') 
-                    .sort((a, b) => b.createdAt.toDate() - a.createdAt.toDate())
-                    [0];
+                    .sort((a, b) => b.createdAt.toDate() - a.createdAt.toDate())[0];
 
                 if (activeOrder) {
-                    showOrderStatus(activeOrder);
+                    listenToOrderStatus(activeOrder.id);
                 } else {
-                    showModal(orderTypeModal);
+                    alert("No active order found for this number.");
                 }
             } catch (error) {
-                console.error("Error checking for active order:", error);
-                showModal(orderTypeModal);
+                console.error("Error finding order:", error);
+                alert("Could not find order. Please try again.");
             }
         }
-
-        function showOrderStatus(order) {
+        
+        function listenToOrderStatus(orderId) {
+            if (activeOrderListener) activeOrderListener();
+            const orderRef = doc(db, 'orders', orderId);
+            activeOrderListener = onSnapshot(orderRef, (docSnap) => {
+                if (docSnap.exists()) {
+                    const orderData = { id: docSnap.id, ...docSnap.data() };
+                    if (orderData.status === 'Completed') {
+                        if (activeOrderListener) activeOrderListener();
+                        localStorage.removeItem('customerWhatsapp');
+                        alert("Your order is complete! Thank you.");
+                        showModal(orderTypeModal);
+                    } else {
+                        updateOrderStatusUI(orderData);
+                    }
+                }
+            });
+        }
+        
+        function updateOrderStatusUI(order) {
             const progressBar = document.getElementById('progress-bar');
             const itemsContainer = document.getElementById('status-order-items');
             const statuses = ['Pending', 'In Progress', 'Ready', 'Out for Delivery'];
             const currentStatusIndex = statuses.indexOf(order.status);
 
-            // FIX: Correctly apply active-line class to show progress
             progressBar.innerHTML = statuses.map((status, index) => `
                 <div class="progress-step ${index <= currentStatusIndex ? 'active' : ''} ${index < currentStatusIndex ? 'active-line' : ''}">
                     <div class="progress-circle bg-gray-200">
@@ -298,6 +318,7 @@
             `).join('');
 
             document.getElementById('add-more-items-btn').onclick = () => {
+                if (activeOrderListener) activeOrderListener();
                 cart = JSON.parse(order.items || '{}');
                 orderType = order.orderType;
                 selectedTableId = order.tableId;
@@ -309,6 +330,7 @@
             };
 
             document.getElementById('start-fresh-order-btn').onclick = () => {
+                if (activeOrderListener) activeOrderListener();
                 localStorage.removeItem('customerWhatsapp');
                 showModal(orderTypeModal);
             };
@@ -319,8 +341,19 @@
         window.onload = () => {
             checkDeliveryHours();
             fetchMenu();
-            checkForActiveOrder();
+            const lastNumber = localStorage.getItem('customerWhatsapp');
+            if (lastNumber) {
+                findAndTrackOrder(lastNumber);
+            } else {
+                showModal(orderTypeModal);
+            }
         };
+
+        document.getElementById('track-order-btn').addEventListener('click', () => showModal(trackOrderModal));
+        document.getElementById('track-submit-btn').addEventListener('click', () => {
+            const number = document.getElementById('track-whatsapp-number').value;
+            findAndTrackOrder(number);
+        });
 
         document.querySelectorAll('.order-type-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
@@ -335,7 +368,7 @@
         });
 
         function showModal(modal) {
-            [orderTypeModal, tableSelectionModal, cartModal, occupiedTableModal, orderStatusModal].forEach(m => {
+            [orderTypeModal, trackOrderModal, tableSelectionModal, cartModal, occupiedTableModal, orderStatusModal].forEach(m => {
                 m.classList.add('hidden', 'scale-0');
                 m.classList.remove('scale-100');
             });
@@ -345,8 +378,7 @@
         }
 
         function listenForTableUpdates() {
-            const tablesCollection = collection(db, 'tables');
-            onSnapshot(tablesCollection, (snapshot) => {
+            onSnapshot(collection(db, 'tables'), (snapshot) => {
                 const tableGrid = document.getElementById('table-grid');
                 tableGrid.innerHTML = '';
                 const tables = [];
@@ -360,39 +392,16 @@
                 
                 tables.forEach(table => {
                     if (!table.tableNumber) return;
-
                     const tableEl = document.createElement('button');
                     tableEl.dataset.tableId = table.tableNumber;
-                    
-                    let bgColor = 'bg-gray-300';
-                    let textColor = 'text-gray-500';
-                    let statusText = table.status;
-                    let countdownText = '';
-                    let isDisabled = true;
+                    let bgColor = 'bg-gray-300', textColor = 'text-gray-500', statusText = table.status, countdownText = '', isDisabled = true;
 
                     switch(table.status) {
-                        case 'Available':
-                            bgColor = 'bg-green-100 hover:bg-green-200';
-                            textColor = 'text-green-800';
-                            isDisabled = false;
-                            break;
-                        case 'Occupied':
-                            bgColor = 'bg-yellow-100 hover:bg-yellow-200';
-                            textColor = 'text-yellow-800';
-                            isDisabled = false;
-                             if (table.availableTime) {
-                                const freeIn = Math.round((table.availableTime.toDate() - new Date()) / 60000);
-                                if (freeIn > 0) countdownText = `<div class="text-xs mt-1">Free in ~${freeIn} min</div>`;
-                            }
-                            break;
-                        case 'Cleaning':
-                            bgColor = 'bg-blue-100';
-                            textColor = 'text-blue-800';
-                            break;
-                        case 'Blocked':
-                            bgColor = 'bg-red-100';
-                            textColor = 'text-red-800';
-                            break;
+                        case 'Available': bgColor = 'bg-green-100 hover:bg-green-200'; textColor = 'text-green-800'; isDisabled = false; break;
+                        case 'Occupied': bgColor = 'bg-yellow-100 hover:bg-yellow-200'; textColor = 'text-yellow-800'; isDisabled = false;
+                             if (table.availableTime) { const freeIn = Math.round((table.availableTime.toDate() - new Date()) / 60000); if (freeIn > 0) countdownText = `<div class="text-xs mt-1">Free in ~${freeIn} min</div>`;} break;
+                        case 'Cleaning': bgColor = 'bg-blue-100'; textColor = 'text-blue-800'; break;
+                        case 'Blocked': bgColor = 'bg-red-100'; textColor = 'text-red-800'; break;
                     }
 
                     tableEl.className = `p-2 rounded-lg text-center transition ${bgColor} ${textColor} disabled:opacity-50 disabled:cursor-not-allowed`;
@@ -405,27 +414,18 @@
                     tableEl.addEventListener('click', () => selectTable(table.tableNumber, table.status, table.orderId));
                     tableGrid.appendChild(tableEl);
                 });
-            }, (error) => {
-                console.error("Error fetching tables: ", error);
             });
         }
         
         async function selectTable(tableId, status, orderId) {
             selectedTableId = tableId;
             document.getElementById('dine-in-fabs').classList.remove('hidden');
-
-            if (status === 'Occupied') {
-                showOccupiedTableOptions(orderId);
-            } else {
-                cart = {};
-                updateCartView();
-                modalContainer.classList.add('hidden');
-            }
+            if (status === 'Occupied') { showOccupiedTableOptions(orderId); } 
+            else { cart = {}; updateCartView(); modalContainer.classList.add('hidden'); }
         }
         
         function showOccupiedTableOptions(orderId) {
             showModal(occupiedTableModal);
-            
             const addToExistingBtn = document.getElementById('add-to-existing-order-btn');
             const startNewBtn = document.getElementById('start-new-order-btn');
             
@@ -437,25 +437,19 @@
             newAddToExistingBtn.onclick = async () => {
                 const orderRef = doc(db, 'orders', orderId);
                 const orderSnap = await getDoc(orderRef);
-                if(orderSnap.exists()) {
-                    cart = JSON.parse(orderSnap.data().items || '{}');
-                    alert(`Items from the existing order have been added to your cart.`);
-                } else {
-                    cart = {};
-                }
+                cart = orderSnap.exists() ? JSON.parse(orderSnap.data().items || '{}') : {};
+                alert(`Items from the existing order have been added to your cart.`);
                 updateCartView();
                 modalContainer.classList.add('hidden');
             };
-
             newStartNewBtn.onclick = () => {
-                cart = {};
-                updateCartView();
-                modalContainer.classList.add('hidden');
+                cart = {}; updateCartView(); modalContainer.classList.add('hidden');
             };
         }
 
         async function fetchMenu() {
             onSnapshot(collection(db, 'menu'), (snapshot) => {
+                const menuGrid = document.getElementById('menu-grid');
                 menuGrid.innerHTML = '';
                 const categories = new Set(['All']);
                 const items = [];
@@ -467,8 +461,6 @@
                 });
                 renderCategories(Array.from(categories));
                 renderMenuItems(items);
-            }, (error) => {
-                 console.error("Error fetching menu: ", error);
             });
         }
 
@@ -487,17 +479,34 @@
         }
 
         function renderMenuItems(items, filter = 'All') {
+            const menuGrid = document.getElementById('menu-grid');
             menuGrid.innerHTML = '';
             items
               .filter(item => filter === 'All' || item.category === filter)
               .forEach(item => {
                 const finalPrice = item.price - (item.price * (item.discount || 0) / 100);
                 const card = document.createElement('div');
-                card.className = 'menu-item-card bg-white rounded-xl shadow-md overflow-hidden flex flex-col transition-transform transform hover:-translate-y-1';
+                card.className = 'menu-item-card bg-white rounded-xl shadow-md overflow-hidden flex flex-col transition-transform transform hover:-translate-y-1 relative';
                 card.dataset.category = item.category;
+
+                let stockOverlay = '';
+                let addButtonClass = 'bg-brand hover:bg-brand-dark';
+                let addButtonText = 'Add';
+                let isButtonDisabled = false;
+                let fewLeftBadge = '';
+
+                if (item.stockStatus === 'sold_out') {
+                    stockOverlay = `<div class="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center rounded-xl"><span class="text-white font-bold text-2xl transform -rotate-12 border-4 border-white px-4 py-2">SOLD OUT</span></div>`;
+                    addButtonClass = 'bg-gray-400 cursor-not-allowed';
+                    isButtonDisabled = true;
+                } else if (item.stockStatus === 'few_left') {
+                    fewLeftBadge = '<div class="absolute top-2 right-2 bg-yellow-400 text-yellow-900 text-xs font-bold px-2 py-1 rounded-full">Hurry, only a few left!</div>';
+                }
+
                 card.innerHTML = `
-                    <div class="h-40 overflow-hidden">
+                    <div class="h-40 overflow-hidden relative">
                         <img class="w-full h-full object-cover" src="${item.imageUrl || 'https://placehold.co/400x300'}" alt="${item.name}">
+                        ${fewLeftBadge}
                     </div>
                     <div class="p-3 flex-grow flex flex-col">
                         <h3 class="text-base font-bold text-gray-800">${item.name}</h3>
@@ -507,9 +516,10 @@
                                 ₹${finalPrice.toFixed(0)}
                                 ${item.discount > 0 ? `<span class="text-xs text-red-500 line-through ml-1">₹${item.price.toFixed(0)}</span>` : ''}
                             </p>
-                            <button data-id="${item.id}" class="add-to-cart-btn bg-brand text-white font-semibold px-4 py-2 rounded-full hover:bg-brand-dark transition text-sm">Add</button>
+                            <button data-id="${item.id}" class="add-to-cart-btn text-white font-semibold px-4 py-2 rounded-full transition text-sm ${addButtonClass}" ${isButtonDisabled ? 'disabled' : ''}>${addButtonText}</button>
                         </div>
                     </div>
+                    ${stockOverlay}
                 `;
                 menuGrid.appendChild(card);
             });
@@ -535,14 +545,31 @@
         }
 
         function updateCartView() {
-            const cartCount = document.getElementById('cart-count');
+            const cartButtonContainer = document.getElementById('cart-fab');
+            const cartItemCountText = document.getElementById('cart-item-count-text');
+            const cartTotalPreview = document.getElementById('cart-total-preview');
             const cartItemsContainer = document.getElementById('cart-items');
             const cartTotalEl = document.getElementById('cart-total');
             
             let totalItems = 0;
             let totalPrice = 0;
-            cartItemsContainer.innerHTML = '';
             
+            for (const itemId in cart) {
+                totalItems += cart[itemId];
+                const item = menuItems[itemId];
+                const finalPrice = item.price - (item.price * (item.discount || 0) / 100);
+                totalPrice += finalPrice * cart[itemId];
+            }
+            
+            if (totalItems > 0) {
+                cartButtonContainer.classList.remove('hidden');
+                cartItemCountText.textContent = `${totalItems} item${totalItems > 1 ? 's' : ''} added`;
+                cartTotalPreview.textContent = `₹${totalPrice.toFixed(0)}`;
+            } else {
+                cartButtonContainer.classList.add('hidden');
+            }
+
+            cartItemsContainer.innerHTML = '';
             if (Object.keys(cart).length === 0) {
                  cartItemsContainer.innerHTML = '<p class="text-center text-gray-500 py-8 text-lg">Your cart is empty.</p>';
             } else {
@@ -551,9 +578,6 @@
                     if (quantity > 0) {
                         const item = menuItems[itemId];
                         const finalPrice = item.price - (item.price * (item.discount || 0) / 100);
-                        totalItems += quantity;
-                        totalPrice += finalPrice * quantity;
-                        
                         const itemEl = document.createElement('div');
                         itemEl.className = 'flex justify-between items-center py-4 border-b text-lg';
                         itemEl.innerHTML = `
@@ -576,10 +600,7 @@
                 }
             }
 
-            cartCount.textContent = totalItems;
-            cartCount.classList.toggle('hidden', totalItems === 0);
             cartTotalEl.textContent = `₹${totalPrice.toFixed(2)}`;
-
             document.querySelectorAll('.cart-quantity-btn').forEach(btn => {
                 btn.addEventListener('click', (e) => {
                     const { id, change } = e.currentTarget.dataset;
@@ -603,39 +624,28 @@
 
         const checkoutBtn = document.getElementById('checkout-btn');
         const placeOrderBtn = document.getElementById('place-order-btn');
-        const checkoutForm = document.getElementById('checkout-form');
         const whatsappInput = document.getElementById('whatsapp-number');
         const nameInput = document.getElementById('customer-name');
         
         function resetCheckout() {
-            checkoutForm.classList.add('hidden');
+            document.getElementById('checkout-form').classList.add('hidden');
             checkoutBtn.classList.remove('hidden');
             placeOrderBtn.classList.add('hidden');
             document.getElementById('special-offer-container').innerHTML = '';
         }
 
         checkoutBtn.addEventListener('click', () => {
-            if (Object.keys(cart).length === 0) {
-                alert('Your cart is empty!');
-                return;
-            }
+            if (Object.keys(cart).length === 0) return;
             checkAndShowBiryaniOffer();
-            checkoutForm.classList.remove('hidden');
+            document.getElementById('checkout-form').classList.remove('hidden');
             checkoutBtn.classList.add('hidden');
             placeOrderBtn.classList.remove('hidden');
         });
         
         function checkAndShowBiryaniOffer() {
             const offerContainer = document.getElementById('special-offer-container');
-            const today = new Date().getDay();
-            
-            if (today === 1) {
-                offerContainer.innerHTML = `
-                    <div class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-800 p-4 rounded-md mb-4 slide-in-top">
-                        <p class="font-bold">✨ Monday Biryani Special!</p>
-                        <p class="text-sm mt-1">Don't forget about our special Biryani dinner tonight. It's included with monthly food plans (PG) or available for purchase separately!</p>
-                    </div>
-                `;
+            if (new Date().getDay() === 1) {
+                offerContainer.innerHTML = `<div class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-800 p-4 rounded-md mb-4 slide-in-top"><p class="font-bold">✨ Monday Biryani Special!</p><p class="text-sm mt-1">Don't forget our special Biryani dinner tonight!</p></div>`;
             } else {
                 offerContainer.innerHTML = '';
             }
@@ -662,120 +672,70 @@
             const customerName = nameInput.value.trim();
             const isConfirmed = document.getElementById('confirm-order').checked;
 
-            if (whatsappNumber.length !== 10) { alert('Please enter a valid 10-digit WhatsApp number.'); return; }
-            if (nameInput.offsetParent !== null && !customerName) { alert('Please enter your name.'); return; }
-            if (!isConfirmed) { alert('Please confirm this is a genuine order.'); return; }
-            if (Object.keys(cart).length === 0) { alert('Your cart is empty.'); return; }
+            if (whatsappNumber.length !== 10 || (nameInput.offsetParent !== null && !customerName) || !isConfirmed || Object.keys(cart).length === 0) {
+                alert('Please fill all details correctly.');
+                return;
+            }
             
             placeOrderBtn.disabled = true;
             placeOrderBtn.textContent = 'Placing Order...';
 
             try {
-                let totalAmount = 0;
-                let orderItems = {};
+                let totalAmount = 0, orderItems = {};
                 for (const itemId in cart) {
                     const item = menuItems[itemId];
                     const quantity = cart[itemId];
                     const finalPrice = item.price - (item.price * (item.discount || 0) / 100);
                     totalAmount += finalPrice * quantity;
-                    orderItems[itemId] = {
-                        name: item.name,
-                        quantity: quantity,
-                        price: finalPrice
-                    };
+                    orderItems[itemId] = { name: item.name, quantity: quantity, price: finalPrice };
                 }
 
-                const orderData = {
-                    customerName,
-                    whatsappNumber,
-                    items: JSON.stringify(orderItems),
-                    totalAmount,
-                    status: 'Pending',
-                    paymentStatus: 'Unpaid',
-                    orderType,
-                    tableId: selectedTableId,
-                    createdAt: serverTimestamp(),
-                    isHidden: false,
-                };
+                const orderData = { customerName, whatsappNumber, items: JSON.stringify(orderItems), totalAmount, status: 'Pending', paymentStatus: 'Unpaid', orderType, tableId: selectedTableId, createdAt: serverTimestamp(), isHidden: false };
                 
                 const batch = writeBatch(db);
-                const customerRef = doc(db, 'customers', whatsappNumber);
-                batch.set(customerRef, { name: customerName }, { merge: true });
+                batch.set(doc(db, 'customers', whatsappNumber), { name: customerName }, { merge: true });
+                const newOrderRef = doc(collection(db, 'orders'));
+                batch.set(newOrderRef, orderData);
 
                 if (orderType === 'Dine-in' && selectedTableId) {
                     const tableRef = doc(db, 'tables', selectedTableId);
-                    const tableSnap = await getDoc(tableRef);
-                    const existingOrderId = tableSnap.data().orderId;
-                    
-                    if (existingOrderId && cartContainsExistingOrder(JSON.parse(tableSnap.data().items || '{}'))) {
-                        const orderRef = doc(db, 'orders', existingOrderId);
-                        batch.update(orderRef, {
-                            items: JSON.stringify(orderItems),
-                            totalAmount: totalAmount
-                        });
-                    } else {
-                        const newOrderRef = doc(collection(db, 'orders'));
-                        batch.set(newOrderRef, orderData);
-                        if (tableSnap.data().status === 'Available') {
-                             batch.update(tableRef, { status: 'Occupied', orderId: newOrderRef.id });
-                        }
-                    }
-                } else {
-                    const newOrderRef = doc(collection(db, 'orders'));
-                    batch.set(newOrderRef, orderData);
+                    batch.update(tableRef, { status: 'Occupied', orderId: newOrderRef.id });
                 }
 
                 await batch.commit();
-
                 alert('Order placed successfully!');
                 cart = {};
                 updateCartView();
                 modalContainer.classList.add('hidden');
-                checkForActiveOrder();
+                listenToOrderStatus(newOrderRef.id);
                 
             } catch (error) {
                 console.error('Error placing order:', error);
-                alert('Failed to place order. Please try again.');
+                alert('Failed to place order.');
             } finally {
                 placeOrderBtn.disabled = false;
                 placeOrderBtn.textContent = 'Place Order';
             }
         });
-        
-        function cartContainsExistingOrder(existingItems) {
-            for(const itemId in existingItems) {
-                if(!cart[itemId] || cart[itemId] < existingItems[itemId].quantity) {
-                    return false;
-                }
-            }
-            return true;
-        }
 
         document.getElementById('request-water-btn').addEventListener('click', () => sendHelpRequest('needsWater'));
         document.getElementById('request-help-btn').addEventListener('click', () => sendHelpRequest('needsHelp'));
+        document.getElementById('request-bill-btn').addEventListener('click', () => sendHelpRequest('needsBill'));
 
         async function sendHelpRequest(type) {
             if (!selectedTableId) return;
-            const btn = type === 'needsWater' ? document.getElementById('request-water-btn') : document.getElementById('request-help-btn');
+            const btn = document.getElementById(`request-${type === 'needsWater' ? 'water' : (type === 'needsHelp' ? 'help' : 'bill')}-btn`);
             btn.disabled = true;
-
             const tableRef = doc(db, 'tables', selectedTableId);
             try {
                 await updateDoc(tableRef, { [type]: true });
                 btn.classList.add('bg-green-500', 'hover:bg-green-500');
-                btn.innerHTML = `<svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>`;
                 setTimeout(() => {
                     btn.disabled = false;
                     btn.classList.remove('bg-green-500', 'hover:bg-green-500');
-                    const originalIcon = type === 'needsWater' 
-                        ? `<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 20 20" fill="currentColor"><path d="M5 12a1 1 0 102 0V6.414l1.293 1.293a1 1 0 001.414-1.414l-3-3a1 1 0 00-1.414 0l-3 3a1 1 0 001.414 1.414L5 6.414V12zM15 8a1 1 0 10-2 0v5.586l-1.293-1.293a1 1 0 00-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L15 13.586V8z" /></svg>`
-                        : `<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd" /></svg>`;
-                    const originalText = type === 'needsWater' ? 'Water' : 'Help';
-                    btn.innerHTML = `${originalIcon}<span class="font-semibold">${originalText}</span>`;
                 }, 3000);
             } catch (error) {
-                console.error(`[Customer View] Error sending '${type}' request for table ${selectedTableId}:`, error);
-                alert('Could not send request. Please try again.');
+                console.error(`Error sending '${type}' request`, error);
                 btn.disabled = false;
             }
         }
