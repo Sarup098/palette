@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kitchen Display - Artevia Palette</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom Brand Color */
+        .bg-brand { background-color: #a43c1a; }
+        .hover\:bg-brand-dark:hover { background-color: #8a3216; }
+        
+        /* High contrast for kitchen environment */
+        body {
+            background-color: #111827; /* gray-900 */
+            color: #f3f4f6; /* gray-100 */
+        }
+        .order-card {
+            background-color: #1f2937; /* gray-800 */
+            border: 1px solid #374151; /* gray-700 */
+        }
+        .order-card-header {
+            background-color: #374151; /* gray-700 */
+        }
+    </style>
+</head>
+<body class="font-sans">
+    
+    <!-- Header -->
+    <header class="bg-brand shadow-md sticky top-0 z-20">
+        <div class="container mx-auto px-4 py-3 flex items-center justify-between">
+            <div class="flex items-center gap-4">
+                <img src="https://raw.githubusercontent.com/Sarup098/artevia/main/Artevia_Palette_Logo.png" alt="Artevia Palette Logo" class="h-12 w-auto">
+                <h1 class="text-2xl font-bold text-white">Kitchen View</h1>
+            </div>
+            <div id="live-indicator" class="flex items-center gap-2">
+                <span class="relative flex h-3 w-3">
+                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                    <span class="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
+                </span>
+                <span class="text-white font-semibold">Live</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="container mx-auto p-4">
+        <div id="order-display-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            <!-- Kitchen order tickets will be injected here -->
+        </div>
+    </main>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-app.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-auth.js";
+        import { getFirestore, collection, onSnapshot, doc, updateDoc, query, where, orderBy, Timestamp } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCuepnUYt_rDEffSraYycHxYrm5sDlXM6s",
+            authDomain: "palette-orders.firebaseapp.com",
+            projectId: "palette-orders",
+            storageBucket: "palette-orders.firebasestorage.app",
+            messagingSenderId: "424044050877",
+            appId: "1:424044050877:web:9ea875314de19b70173ad4",
+            measurementId: "G-XNVCLD42Y4"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                listenForKitchenOrders();
+            }
+        });
+
+        signInAnonymously(auth).catch(error => {
+            console.error("Kitchen view sign-in failed:", error);
+            alert("Could not connect to the order server.");
+        });
+
+        function timeAgo(timestamp) {
+            if (!timestamp) return 'Just now';
+            const seconds = Math.floor((new Date() - timestamp.toDate()) / 1000);
+            let interval = seconds / 31536000;
+            if (interval > 1) return Math.floor(interval) + " years ago";
+            interval = seconds / 2592000;
+            if (interval > 1) return Math.floor(interval) + " months ago";
+            interval = seconds / 86400;
+            if (interval > 1) return Math.floor(interval) + " days ago";
+            interval = seconds / 3600;
+            if (interval > 1) return Math.floor(interval) + " hours ago";
+            interval = seconds / 60;
+            if (interval > 1) return Math.floor(interval) + " min ago";
+            return "Just now";
+        }
+
+        function listenForKitchenOrders() {
+            const orderGrid = document.getElementById('order-display-grid');
+            
+            // FIX: Simplified query to avoid needing a composite index.
+            // We fetch all of today's orders and then filter for the kitchen-relevant ones in the code.
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const startOfToday = Timestamp.fromDate(today);
+
+            const q = query(
+                collection(db, 'orders'), 
+                where('createdAt', '>=', startOfToday),
+                orderBy('createdAt')
+            );
+            
+            onSnapshot(q, (snapshot) => {
+                orderGrid.innerHTML = ''; // Clear and redraw all for simplicity and reliability
+                snapshot.forEach(doc => {
+                    const order = { id: doc.id, ...doc.data() };
+                    // Filter for kitchen-relevant statuses here
+                    if (['Pending', 'In Progress'].includes(order.status)) {
+                        const card = createOrderCard(order);
+                        orderGrid.appendChild(card);
+                    }
+                });
+            });
+        }
+
+        function createOrderCard(order) {
+            const card = document.createElement('div');
+            card.className = 'order-card rounded-lg shadow-lg flex flex-col';
+            
+            const itemsHtml = Object.values(JSON.parse(order.items)).map(item => `
+                <li class="flex items-start py-2">
+                    <span class="font-bold text-2xl w-12">${item.quantity}x</span>
+                    <span class="text-xl">${item.name}</span>
+                </li>
+            `).join('');
+            
+            let headerInfo = '';
+            if (order.orderType === 'Dine-in') {
+                headerInfo = `Table ${order.tableId}`;
+            } else {
+                headerInfo = `${order.orderType}`;
+            }
+
+            card.innerHTML = `
+                <div class="order-card-header p-3 rounded-t-lg flex justify-between items-center">
+                    <h3 class="text-2xl font-bold">${headerInfo}</h3>
+                    <p class="text-sm font-semibold">${timeAgo(order.createdAt)}</p>
+                </div>
+                <div class="p-4 flex-grow">
+                    <ul class="divide-y divide-gray-600">
+                        ${itemsHtml}
+                    </ul>
+                </div>
+                <div class="p-3 mt-auto">
+                    <button data-id="${order.id}" class="ready-btn w-full bg-green-600 text-white font-bold text-xl py-3 rounded-md hover:bg-green-700 transition">
+                        Mark as Ready
+                    </button>
+                </div>
+            `;
+            return card;
+        }
+
+        async function markOrderReady(orderId) {
+            const orderRef = doc(db, 'orders', orderId);
+            try {
+                await updateDoc(orderRef, { status: 'Ready' });
+            } catch (error) {
+                console.error("Error marking order as ready:", error);
+                alert("Could not update order status. Please try again.");
+            }
+        }
+        
+        document.getElementById('order-display-grid').addEventListener('click', (e) => {
+            const readyButton = e.target.closest('.ready-btn');
+            if (readyButton) {
+                readyButton.disabled = true;
+                readyButton.textContent = 'Updating...';
+                markOrderReady(readyButton.dataset.id);
+            }
+        });
+    </script>
+</body>
+</html>
+
