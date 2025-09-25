@@ -75,7 +75,6 @@
     <div class="container mx-auto max-w-4xl p-2 sm:p-4">
         <header class="text-center my-4 flex flex-col items-center bg-brand text-white py-4 rounded-xl shadow-lg relative">
             <img src="https://raw.githubusercontent.com/Sarup098/artevia/main/Artevia_Palette_Logo.png" alt="Artevia Palette Logo" class="h-32 w-auto object-contain">
-            <button id="track-order-btn" class="absolute top-4 right-4 bg-white/20 text-white font-semibold px-4 py-2 rounded-lg hover:bg-white/30 transition text-sm">Track Order</button>
         </header>
 
         <!-- Category Filters -->
@@ -99,8 +98,8 @@
             <button id="request-help-btn" class="flex-1 bg-white text-gray-800 h-12 rounded-lg shadow-lg flex items-center justify-center gap-2 hover:bg-gray-200 transition-transform transform hover:scale-105">
                 <span class="font-semibold">Help</span>
             </button>
-            <button id="request-bill-btn" class="flex-1 bg-white text-gray-800 h-12 rounded-lg shadow-lg flex items-center justify-center gap-2 hover:bg-gray-200 transition-transform transform hover:scale-105">
-                 <span class="font-semibold">Request Bill</span>
+            <button id="track-dine-in-order-btn" class="flex-1 bg-white text-gray-800 h-12 rounded-lg shadow-lg flex items-center justify-center gap-2 hover:bg-gray-200 transition-transform transform hover:scale-105">
+                 <span class="font-semibold">Track Order</span>
             </button>
         </div>
         <!-- Main Cart Button -->
@@ -123,20 +122,11 @@
             <p class="text-gray-600 mb-6 text-xl">How would you like to order?</p>
             <div class="flex flex-col gap-4">
                 <button data-type="Dine-in" class="order-type-btn w-full bg-brand text-white text-xl font-bold py-4 rounded-lg hover:bg-brand-dark transition">Dine-in</button>
-                <button data-type="Takeaway" class="order-type-btn w-full bg-brand text-white text-xl font-bold py-4 rounded-lg hover:bg-brand-dark transition">Takeaway</button>
-                <button id="delivery-btn" data-type="Delivery" class="order-type-btn w-full bg-brand text-white text-xl font-bold py-4 rounded-lg hover:bg-brand-dark transition disabled:bg-gray-400 disabled:cursor-not-allowed">Delivery</button>
-                <p id="delivery-time-info" class="text-xs text-gray-500 mt-1 hidden">(Available 5 PM - 9 PM)</p>
+                <button class="w-full bg-gray-300 text-gray-500 text-xl font-bold py-4 rounded-lg cursor-not-allowed relative">Takeaway <span class="absolute top-1/2 -translate-y-1/2 right-4 text-xs font-semibold bg-gray-400 text-white px-2 py-1 rounded-full">SOON</span></button>
+                <button class="w-full bg-gray-300 text-gray-500 text-xl font-bold py-4 rounded-lg cursor-not-allowed relative">Delivery <span class="absolute top-1/2 -translate-y-1/2 right-4 text-xs font-semibold bg-gray-400 text-white px-2 py-1 rounded-full">SOON</span></button>
             </div>
         </div>
         
-        <!-- Track Order Modal -->
-        <div id="track-order-modal" class="bg-white rounded-xl shadow-2xl p-6 w-full max-w-sm text-center transform transition-all scale-0 hidden">
-            <h2 class="text-3xl font-bold mb-2">Track Your Order</h2>
-            <p class="text-gray-600 mb-6">Enter the WhatsApp number used to place the order.</p>
-            <input type="tel" id="track-whatsapp-number" class="w-full p-4 border rounded-md mb-3 text-xl" placeholder="10-Digit Number" maxlength="10">
-            <button id="track-submit-btn" class="w-full bg-brand text-white text-xl font-bold py-4 rounded-lg hover:bg-brand-dark transition">Find Order</button>
-        </div>
-
         <!-- Order Status Modal -->
         <div id="order-status-modal" class="bg-white rounded-xl shadow-2xl p-6 w-full max-w-md text-center transform transition-all scale-0 hidden">
             <h2 class="text-3xl font-bold mb-2">Your Order Status</h2>
@@ -151,8 +141,18 @@
             </div>
 
             <div class="flex flex-col gap-4">
-                <button id="add-more-items-btn" class="w-full bg-brand text-white text-xl font-bold py-4 rounded-lg hover:bg-brand-dark transition">Add More Items</button>
+                <button id="request-bill-from-status-btn" class="w-full bg-blue-600 text-white text-lg font-semibold py-3 rounded-lg hover:bg-blue-700 transition">Request Bill</button>
                 <button id="start-fresh-order-btn" class="w-full bg-gray-600 text-white text-lg font-semibold py-3 rounded-lg hover:bg-gray-700 transition">Start a New Order Anyway</button>
+            </div>
+        </div>
+
+        <!-- Request Bill on Completion Modal -->
+        <div id="request-bill-modal" class="bg-white rounded-xl shadow-2xl p-6 w-full max-w-sm text-center transform transition-all scale-0 hidden">
+            <h2 class="text-3xl font-bold mb-2">Order Ready!</h2>
+            <p class="text-gray-600 mb-6 text-lg">Your order is ready. Would you like to request the bill at your table?</p>
+            <div class="flex flex-col gap-4">
+                <button id="confirm-request-bill-btn" class="w-full bg-brand text-white text-xl font-bold py-4 rounded-lg hover:bg-brand-dark transition">Yes, Request Bill</button>
+                <button id="decline-request-bill-btn" class="w-full bg-gray-600 text-white text-lg font-semibold py-3 rounded-lg hover:bg-gray-700 transition">No, I'll go to the counter</button>
             </div>
         </div>
 
@@ -164,13 +164,12 @@
              </div>
         </div>
 
-        <!-- Occupied Table Options Modal -->
+        <!-- REFINED: Occupied Table Warning Modal -->
         <div id="occupied-table-modal" class="bg-white rounded-xl shadow-2xl p-6 w-full max-w-sm text-center transform transition-all scale-0 hidden">
-            <h2 class="text-3xl font-bold mb-2">Table Is Occupied</h2>
-            <p class="text-gray-600 mb-6 text-lg">What would you like to do?</p>
+            <h2 class="text-3xl font-bold mb-2 text-yellow-600">Warning: Table Occupied</h2>
+            <p class="text-gray-600 mb-6 text-lg">This table already has an active order. Starting a new order here may cause confusion.</p>
             <div class="flex flex-col gap-4">
-                <button id="add-to-existing-order-btn" class="w-full bg-brand text-white text-xl font-bold py-4 rounded-lg hover:bg-brand-dark transition">Add to Existing Order</button>
-                <button id="start-new-order-btn" class="w-full bg-gray-600 text-white text-xl font-bold py-4 rounded-lg hover:bg-gray-700 transition">Start a New Separate Order</button>
+                <button id="start-new-order-anyway-btn" class="w-full bg-brand text-white text-xl font-bold py-4 rounded-lg hover:bg-brand-dark transition">Continue Separate Order Anyway</button>
             </div>
         </div>
 
@@ -233,26 +232,15 @@
         const modalContainer = document.getElementById('modal-container');
         const orderTypeModal = document.getElementById('order-type-modal');
         const orderStatusModal = document.getElementById('order-status-modal');
-        const trackOrderModal = document.getElementById('track-order-modal');
+        const requestBillModal = document.getElementById('request-bill-modal');
         const tableSelectionModal = document.getElementById('table-selection-modal');
         const occupiedTableModal = document.getElementById('occupied-table-modal');
         const cartModal = document.getElementById('cart-modal');
         
         signInAnonymously(auth).catch(error => console.error("Anonymous sign-in failed:", error));
         
-        function checkDeliveryHours() {
-            const deliveryBtn = document.getElementById('delivery-btn');
-            const deliveryInfo = document.getElementById('delivery-time-info');
-            const now = new Date();
-            const hour = now.getHours();
-            const isDeliveryTime = hour >= 17 && hour < 21;
-            deliveryBtn.disabled = !isDeliveryTime;
-            deliveryInfo.classList.toggle('hidden', isDeliveryTime);
-        }
-
         async function findAndTrackOrder(number) {
             if (!number || number.length !== 10) {
-                alert("Please enter a valid 10-digit number.");
                 return;
             }
             
@@ -287,10 +275,7 @@
                 if (docSnap.exists()) {
                     const orderData = { id: docSnap.id, ...docSnap.data() };
                     if (orderData.status === 'Completed') {
-                        if (activeOrderListener) activeOrderListener();
-                        localStorage.removeItem('customerWhatsapp');
-                        alert("Your order is complete! Thank you.");
-                        showModal(orderTypeModal);
+                         showRequestBillPopup();
                     } else {
                         updateOrderStatusUI(orderData);
                     }
@@ -317,42 +302,47 @@
                 <p>${item.quantity} x ${item.name}</p>
             `).join('');
 
-            document.getElementById('add-more-items-btn').onclick = () => {
-                if (activeOrderListener) activeOrderListener();
-                cart = JSON.parse(order.items || '{}');
-                orderType = order.orderType;
-                selectedTableId = order.tableId;
-                if (orderType === 'Dine-in') {
-                    document.getElementById('dine-in-fabs').classList.remove('hidden');
-                }
-                updateCartView();
-                modalContainer.classList.add('hidden');
-            };
-
-            document.getElementById('start-fresh-order-btn').onclick = () => {
-                if (activeOrderListener) activeOrderListener();
-                localStorage.removeItem('customerWhatsapp');
-                showModal(orderTypeModal);
-            };
+            document.getElementById('request-bill-from-status-btn').onclick = () => sendHelpRequest('needsBill');
+            document.getElementById('start-fresh-order-btn').onclick = () => cleanupAfterOrder();
 
             showModal(orderStatusModal);
         }
+        
+        function showRequestBillPopup() {
+            showModal(requestBillModal);
+            document.getElementById('confirm-request-bill-btn').onclick = () => {
+                sendHelpRequest('needsBill');
+                cleanupAfterOrder();
+            };
+            document.getElementById('decline-request-bill-btn').onclick = () => cleanupAfterOrder();
+        }
+
+        function cleanupAfterOrder() {
+            if (activeOrderListener) activeOrderListener();
+            localStorage.removeItem('customerWhatsapp');
+            alert("Thank you for your order!");
+            showModal(orderTypeModal);
+        }
 
         window.onload = () => {
-            checkDeliveryHours();
-            fetchMenu();
             const lastNumber = localStorage.getItem('customerWhatsapp');
             if (lastNumber) {
                 findAndTrackOrder(lastNumber);
             } else {
                 showModal(orderTypeModal);
             }
+            fetchMenu();
         };
 
-        document.getElementById('track-order-btn').addEventListener('click', () => showModal(trackOrderModal));
-        document.getElementById('track-submit-btn').addEventListener('click', () => {
-            const number = document.getElementById('track-whatsapp-number').value;
-            findAndTrackOrder(number);
+        document.getElementById('track-dine-in-order-btn').addEventListener('click', async () => {
+            if (!selectedTableId) return;
+            const tableRef = doc(db, 'tables', selectedTableId);
+            const tableSnap = await getDoc(tableRef);
+            if (tableSnap.exists() && tableSnap.data().orderId) {
+                listenToOrderStatus(tableSnap.data().orderId);
+            } else {
+                alert("No active order found for this table. Please place an order first.");
+            }
         });
 
         document.querySelectorAll('.order-type-btn').forEach(btn => {
@@ -361,14 +351,12 @@
                 if (orderType === 'Dine-in') {
                     showModal(tableSelectionModal);
                     listenForTableUpdates();
-                } else {
-                    modalContainer.classList.add('hidden');
                 }
             });
         });
 
         function showModal(modal) {
-            [orderTypeModal, trackOrderModal, tableSelectionModal, cartModal, occupiedTableModal, orderStatusModal].forEach(m => {
+            [orderTypeModal, tableSelectionModal, cartModal, occupiedTableModal, orderStatusModal, requestBillModal].forEach(m => {
                 m.classList.add('hidden', 'scale-0');
                 m.classList.remove('scale-100');
             });
@@ -420,30 +408,26 @@
         async function selectTable(tableId, status, orderId) {
             selectedTableId = tableId;
             document.getElementById('dine-in-fabs').classList.remove('hidden');
-            if (status === 'Occupied') { showOccupiedTableOptions(orderId); } 
-            else { cart = {}; updateCartView(); modalContainer.classList.add('hidden'); }
+            if (status === 'Occupied') { 
+                showOccupiedTableWarning();
+            } else { 
+                cart = {}; 
+                updateCartView(); 
+                modalContainer.classList.add('hidden'); 
+            }
         }
         
-        function showOccupiedTableOptions(orderId) {
+        function showOccupiedTableWarning() {
             showModal(occupiedTableModal);
-            const addToExistingBtn = document.getElementById('add-to-existing-order-btn');
-            const startNewBtn = document.getElementById('start-new-order-btn');
+            const startNewBtn = document.getElementById('start-new-order-anyway-btn');
             
-            const newAddToExistingBtn = addToExistingBtn.cloneNode(true);
             const newStartNewBtn = startNewBtn.cloneNode(true);
-            addToExistingBtn.parentNode.replaceChild(newAddToExistingBtn, addToExistingBtn);
             startNewBtn.parentNode.replaceChild(newStartNewBtn, startNewBtn);
 
-            newAddToExistingBtn.onclick = async () => {
-                const orderRef = doc(db, 'orders', orderId);
-                const orderSnap = await getDoc(orderRef);
-                cart = orderSnap.exists() ? JSON.parse(orderSnap.data().items || '{}') : {};
-                alert(`Items from the existing order have been added to your cart.`);
-                updateCartView();
-                modalContainer.classList.add('hidden');
-            };
             newStartNewBtn.onclick = () => {
-                cart = {}; updateCartView(); modalContainer.classList.add('hidden');
+                cart = {}; 
+                updateCartView(); 
+                modalContainer.classList.add('hidden');
             };
         }
 
@@ -503,9 +487,13 @@
                     fewLeftBadge = '<div class="absolute top-2 right-2 bg-yellow-400 text-yellow-900 text-xs font-bold px-2 py-1 rounded-full">Hurry, only a few left!</div>';
                 }
 
+                const placeholderText = encodeURIComponent(item.name);
                 card.innerHTML = `
                     <div class="h-40 overflow-hidden relative">
-                        <img class="w-full h-full object-cover" src="${item.imageUrl || 'https://placehold.co/400x300'}" alt="${item.name}">
+                        <img class="w-full h-full object-cover" 
+                             src="${item.imageUrl || `https://placehold.co/400x300/a43c1a/ffffff?text=${placeholderText}`}" 
+                             alt="${item.name}" 
+                             onerror="this.onerror=null; this.src='https://placehold.co/400x300/a43c1a/ffffff?text=${placeholderText}';">
                         ${fewLeftBadge}
                     </div>
                     <div class="p-3 flex-grow flex flex-col">
@@ -617,10 +605,14 @@
         });
         
         modalContainer.addEventListener('click', (e) => {
-            if (e.target === modalContainer || e.target.classList.contains('modal-close-btn')) {
-                modalContainer.classList.add('hidden');
+            if (e.target === modalContainer) {
+                closeAllModals();
             }
         });
+
+        function closeAllModals() {
+            modalContainer.classList.add('hidden');
+        }
 
         const checkoutBtn = document.getElementById('checkout-btn');
         const placeOrderBtn = document.getElementById('place-order-btn');
@@ -706,7 +698,6 @@
                 alert('Order placed successfully!');
                 cart = {};
                 updateCartView();
-                modalContainer.classList.add('hidden');
                 listenToOrderStatus(newOrderRef.id);
                 
             } catch (error) {
@@ -720,7 +711,7 @@
 
         document.getElementById('request-water-btn').addEventListener('click', () => sendHelpRequest('needsWater'));
         document.getElementById('request-help-btn').addEventListener('click', () => sendHelpRequest('needsHelp'));
-        document.getElementById('request-bill-btn').addEventListener('click', () => sendHelpRequest('needsBill'));
+        
 
         async function sendHelpRequest(type) {
             if (!selectedTableId) return;
