@@ -465,8 +465,17 @@
         function renderMenuItems(items, filter = 'All') {
             const menuGrid = document.getElementById('menu-grid');
             menuGrid.innerHTML = '';
+
+            // NEW: Sorting logic based on stock status
+            const stockPriority = { 'few_left': 1, 'in_stock': 2, 'sold_out': 3 };
+
             items
               .filter(item => filter === 'All' || item.category === filter)
+              .sort((a, b) => {
+                  const statusA = a.stockStatus || 'in_stock';
+                  const statusB = b.stockStatus || 'in_stock';
+                  return (stockPriority[statusA] || 99) - (stockPriority[statusB] || 99);
+              })
               .forEach(item => {
                 const finalPrice = item.price - (item.price * (item.discount || 0) / 100);
                 const card = document.createElement('div');
@@ -522,9 +531,8 @@
             });
             e.target.classList.add('bg-brand', 'text-white', 'border-brand');
             
-            document.querySelectorAll('.menu-item-card').forEach(card => {
-                card.classList.toggle('hidden', selectedCategory !== 'All' && card.dataset.category !== selectedCategory);
-            });
+            // Re-render the whole list with the new filter and correct sorting
+            renderMenuItems(Object.values(menuItems), selectedCategory);
         }
 
         function addToCart(itemId) {
@@ -632,11 +640,10 @@
             document.getElementById('checkout-form').classList.remove('hidden');
             checkoutBtn.classList.add('hidden');
             placeOrderBtn.classList.remove('hidden');
-            // NEW: Check for saved number on checkout
             const savedNumber = localStorage.getItem('customerWhatsapp');
             if (savedNumber) {
                 whatsappInput.value = savedNumber;
-                whatsappInput.dispatchEvent(new Event('blur')); // Trigger lookup for name
+                whatsappInput.dispatchEvent(new Event('blur'));
             }
         });
         
@@ -678,7 +685,6 @@
             placeOrderBtn.textContent = 'Placing Order...';
 
             try {
-                // NEW: Save number to localStorage on successful order
                 localStorage.setItem('customerWhatsapp', whatsappNumber);
 
                 let totalAmount = 0, orderItems = {};
