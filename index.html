@@ -632,6 +632,12 @@
             document.getElementById('checkout-form').classList.remove('hidden');
             checkoutBtn.classList.add('hidden');
             placeOrderBtn.classList.remove('hidden');
+            // NEW: Check for saved number on checkout
+            const savedNumber = localStorage.getItem('customerWhatsapp');
+            if (savedNumber) {
+                whatsappInput.value = savedNumber;
+                whatsappInput.dispatchEvent(new Event('blur')); // Trigger lookup for name
+            }
         });
         
         function checkAndShowBiryaniOffer() {
@@ -660,7 +666,6 @@
 
         placeOrderBtn.addEventListener('click', async () => {
             const whatsappNumber = whatsappInput.value.trim();
-            localStorage.setItem('customerWhatsapp', whatsappNumber);
             const customerName = nameInput.value.trim();
             const isConfirmed = document.getElementById('confirm-order').checked;
 
@@ -673,6 +678,9 @@
             placeOrderBtn.textContent = 'Placing Order...';
 
             try {
+                // NEW: Save number to localStorage on successful order
+                localStorage.setItem('customerWhatsapp', whatsappNumber);
+
                 let totalAmount = 0, orderItems = {};
                 for (const itemId in cart) {
                     const item = menuItems[itemId];
