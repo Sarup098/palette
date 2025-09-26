@@ -5,39 +5,31 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Menu - Artevia Palette</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <!-- NEW: Replaced jsPDF with the more efficient html2canvas library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         /* Custom Brand Color */
         .bg-brand { background-color: #a43c1a; }
         .text-brand { color: #a43c1a; }
         .border-brand { border-color: #a43c1a; }
-
-        /* Print-specific styles for window.print fallback */
-        @media print {
-            .non-printable { display: none !important; }
-            body { font-size: 10pt; }
-            .printable-menu { box-shadow: none; border: none; padding: 0; margin: 0; }
-            .menu-category, .menu-item-card { page-break-inside: avoid; }
-            * { color: #000 !important; background-color: #fff !important; }
-        }
     </style>
 </head>
 <body class="bg-gray-100 font-sans p-4 md:p-8">
 
-    <div class="container mx-auto max-w-6xl bg-white shadow-lg rounded-lg printable-menu">
+    <div class="container mx-auto max-w-4xl bg-white shadow-lg rounded-lg printable-menu">
         <!-- Header -->
-        <header class="text-center p-8 bg-brand rounded-t-lg non-printable">
+        <header id="menu-header" class="text-center p-8 bg-brand rounded-t-lg">
             <img src="https://raw.githubusercontent.com/Sarup098/artevia/main/Artevia_Palette_Logo.png" alt="Artevia Palette Logo" class="h-32 w-auto mx-auto">
         </header>
         
         <!-- Menu Content: Will be populated by JavaScript -->
-        <div id="menu-content" class="p-8">
+        <div id="menu-content" class="p-8 bg-white">
             <p id="loading-message" class="text-center text-gray-500">Loading menu from the database...</p>
         </div>
 
         <!-- Footer with Print Button -->
         <footer id="print-button-container" class="p-4 text-center border-t non-printable">
-            <button id="generate-pdf-btn" class="bg-brand text-white font-bold py-2 px-6 rounded-lg hover:bg-opacity-90 transition disabled:bg-gray-400 disabled:cursor-wait" disabled>
+            <button id="generate-image-btn" class="bg-brand text-white font-bold py-2 px-6 rounded-lg hover:bg-opacity-90 transition disabled:bg-gray-400 disabled:cursor-wait" disabled>
                 Loading Menu...
             </button>
         </footer>
@@ -61,7 +53,6 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
         const auth = getAuth(app);
-        let menuDataForPDF = null;
 
         async function preloadImages(imageElements) {
             const promises = Array.from(imageElements).map(img => {
@@ -80,7 +71,7 @@
         async function fetchAndRenderMenu() {
             const menuContent = document.getElementById('menu-content');
             const loadingMessage = document.getElementById('loading-message');
-            const pdfButton = document.getElementById('generate-pdf-btn');
+            const generateButton = document.getElementById('generate-image-btn');
             
             try {
                 const q = query(collection(db, "menu"));
@@ -88,7 +79,7 @@
 
                 if (querySnapshot.empty) {
                     loadingMessage.textContent = 'No menu items found.';
-                    pdfButton.textContent = 'No Menu Found';
+                    generateButton.textContent = 'No Menu Found';
                     return;
                 }
                 
@@ -103,8 +94,7 @@
                 }, {});
 
                 const sortedCategories = Object.keys(menuByCategory).sort();
-                menuDataForPDF = { sortedCategories, menuByCategory }; 
-
+                
                 menuContent.innerHTML = ''; 
 
                 for (const category of sortedCategories) {
@@ -141,113 +131,50 @@
                 }
                 
                 const images = menuContent.querySelectorAll('img');
-                pdfButton.textContent = 'Loading Images...';
+                generateButton.textContent = 'Loading Images...';
                 await preloadImages(images);
-                pdfButton.disabled = false;
-                pdfButton.textContent = 'Generate A4 PDF Menu';
-
+                generateButton.disabled = false;
+                generateButton.textContent = 'Download Menu as Image';
 
             } catch (error) {
                 console.error("Error fetching menu:", error);
                 loadingMessage.textContent = 'Failed to load menu.';
                 loadingMessage.classList.add('text-red-500');
-                pdfButton.textContent = 'Error';
+                generateButton.textContent = 'Error';
             }
         }
         
-        const { jsPDF } = window.jspdf;
-        const logoBase64 = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAABQAAAAUACAYAAABTOYkNAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAIGNIUk0AAHolAACAgwAA+f8AAIDpAAB1MAAA6mAAADqYAAAXb5JfxUYAACGoSURBVHic7N17fFzVdQfw3z1/ExIKIV0gIQTy+IRKIZ2QEBJI6A+kIBAKCRUChRAgRAik/gQkEChZSlmKHCmgyEWyFEIRZClSpVxZSlxZynZll3Z32233dnfS7u7udHZ2djqT3f3j+M/5zfzNfWbO3PvuS87znud5ng/Sze6bOWfmzMx73/e97/u+D0KIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIi-l-prefecthing/iVBORw0KGgoAAAANSUhEUgAABQAAAAUACAYAAABTOYkNAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAIGNIUk0AAHolAACAgwAA+f8AAIDpAAB1MAAA6mAAADqYAAAXb5JfxUYAACGoSURBVHic7N17fFzVdQfw3z1/ExIKIV0gIQTy+IRKIZ2QEBJI6A+kIBAKCRUChRAgRAik/gQkEChZSlmKHCmgyEWyFEIRZClSpVxZSlxZynZll3Z32233dnfS7u7udHZ2djqT3f3j+M/5zfzNfWbO3PvuS87znud5ng/Sze6bOWfmzMx73/e97/u+D0KIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIi-g-';
-
-        async function generateMenuPDF() {
-            const printButton = document.getElementById('generate-pdf-btn');
-            if (!menuDataForPDF) {
-                alert("Menu data is still loading. Please wait a moment and try again.");
-                return;
-            }
+        // --- NEW: Image Generation Logic ---
+        async function generateMenuImage() {
+            const printButton = document.getElementById('generate-image-btn');
+            const menuContainer = document.querySelector('.printable-menu'); // The main container
             
             printButton.disabled = true;
-            printButton.textContent = 'Generating PDF...';
-
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF('p', 'mm', 'a4');
-            const { sortedCategories, menuByCategory } = menuDataForPDF;
-
-            const pageHeight = doc.internal.pageSize.getHeight();
-            const topMargin = 20;
-            const bottomMargin = 20;
-            const leftMargin = 15;
-            const contentWidth = doc.internal.pageSize.getWidth() - (leftMargin * 2);
-            let y = topMargin;
-            let pageNum = 1;
-
-            const addHeader = (doc) => {
-                doc.addImage(logoBase64, 'PNG', leftMargin, 5, 30, 30);
-                doc.setFontSize(22);
-                doc.setFont(undefined, 'bold');
-                doc.setTextColor('#a43c1a'); // Brand color
-                doc.text('Artevia Palette Menu', doc.internal.pageSize.getWidth() / 2, 20, { align: 'center' });
-                y = 45; // Reset y position after header
-            };
-
-            const addFooter = (doc, pageNum) => {
-                doc.setFontSize(10);
-                doc.setTextColor(150);
-                doc.text(`Page ${pageNum}`, doc.internal.pageSize.getWidth() / 2, pageHeight - 10, { align: 'center' });
-            };
-
-            addHeader(doc);
-
-            for (const category of sortedCategories) {
-                // Check if category header fits
-                if (y + 15 > pageHeight - bottomMargin) {
-                    addFooter(doc, pageNum++);
-                    doc.addPage();
-                    addHeader(doc);
-                }
-
-                doc.setFontSize(18);
-                doc.setFont(undefined, 'bold');
-                doc.setTextColor('#a43c1a');
-                doc.text(category, leftMargin, y);
-                y += 8;
-
-                const sortedItems = menuByCategory[category].sort((a, b) => a.name.localeCompare(b.name));
-
-                for (const item of sortedItems) {
-                    const itemText = `${item.name} - ₹${item.price}`;
-                    const descriptionLines = doc.splitTextToSize(item.description || '', contentWidth);
-                    
-                    // Check if the whole item block fits
-                    if (y + 10 + (descriptionLines.length * 5) > pageHeight - bottomMargin) {
-                        addFooter(doc, pageNum++);
-                        doc.addPage();
-                        addHeader(doc);
-                    }
-                    
-                    doc.setFontSize(12);
-                    doc.setFont(undefined, 'bold');
-                    doc.setTextColor(0);
-                    doc.text(itemText, leftMargin, y);
-                    y += 5;
-
-                    doc.setFontSize(10);
-                    doc.setFont(undefined, 'normal');
-                    doc.setTextColor(100);
-                    doc.text(descriptionLines, leftMargin, y);
-                    y += descriptionLines.length * 5 + 4;
-                }
-            }
+            printButton.textContent = 'Generating Image...';
             
-            addFooter(doc, pageNum);
-            doc.save('Artevia-Palette-Menu.pdf');
+            try {
+                const canvas = await html2canvas(menuContainer, {
+                    // Options to improve quality
+                    scale: 2,
+                    useCORS: true // Important for loading images from other domains
+                });
+                
+                const link = document.createElement('a');
+                link.download = 'Artevia-Palette-Menu.png';
+                link.href = canvas.toDataURL("image/png");
+                link.click();
 
-            printButton.disabled = false;
-            printButton.textContent = 'Generate A4 PDF Menu';
+            } catch (error) {
+                console.error("Failed to generate image:", error);
+                alert("Sorry, there was an error generating the menu image.");
+            } finally {
+                printButton.disabled = false;
+                printButton.textContent = 'Download Menu as Image';
+            }
         }
 
         signInAnonymously(auth)
             .then(() => {
-                console.log("Authenticated successfully. Fetching menu...");
                 fetchAndRenderMenu();
             })
             .catch(error => {
@@ -255,10 +182,9 @@
                 document.getElementById('loading-message').textContent = 'Error connecting to the server.';
             });
 
-        document.getElementById('generate-pdf-btn').addEventListener('click', generateMenuPDF);
+        document.getElementById('generate-image-btn').addEventListener('click', generateMenuImage);
     </script>
 
 </body>
 </html>
-
 
