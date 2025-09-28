@@ -15,6 +15,7 @@
             position: sticky;
             top: 0;
             background-color: #f9fafb; /* gray-50 */
+            z-index: 10;
         }
     </style>
 </head>
@@ -25,29 +26,42 @@
             <div class="text-center bg-brand p-4">
                 <img src="https://raw.githubusercontent.com/Sarup098/artevia/main/Artevia_Palette_Logo.png" alt="Artevia Palette Logo" class="h-24 w-auto mx-auto mb-2">
                 <h1 class="text-2xl font-bold text-white">Bulk Menu Adder</h1>
-                <p class="text-gray-200">Add up to 15 items at once. Fill a row to add an item.</p>
+                <p class="text-gray-200">Review existing items and add new ones below.</p>
             </div>
             
-            <div class="max-h-[60vh] overflow-y-auto">
-                <table class="w-full text-sm">
-                    <thead class="text-left text-gray-700">
-                        <tr>
-                            <th class="px-2 py-3 w-1/12">#</th>
-                            <th class="px-2 py-3 w-3/12">Item Name*</th>
-                            <th class="px-2 py-3 w-1/12">Price*</th>
-                            <th class="px-2 py-3 w-2/12">Category*</th>
-                            <th class="px-2 py-3 w-5/12">Image Link*</th>
-                        </tr>
-                    </thead>
-                    <tbody id="menu-form-body" class="divide-y">
-                        <!-- 15 rows will be generated here by JS -->
-                    </tbody>
-                </table>
+            <!-- NEW: Display for existing items -->
+            <div class="p-4 border-b">
+                <h2 class="font-bold text-lg mb-2 text-gray-800">Existing Menu Items</h2>
+                <div id="existing-menu-list" class="max-h-[40vh] overflow-y-auto space-y-4">
+                    <p id="loading-existing" class="text-gray-500">Loading existing items...</p>
+                    <!-- JS will populate this with categories and items -->
+                </div>
+            </div>
+
+            <!-- Section for adding new items -->
+            <div class="p-4 border-b">
+                <h2 class="font-bold text-lg mb-2 text-gray-800">Add New Items (Up to 15 at once)</h2>
+                <div class="max-h-[40vh] overflow-y-auto">
+                    <table class="w-full text-sm">
+                        <thead class="text-left text-gray-700">
+                            <tr>
+                                <th class="px-2 py-3 w-1/12">#</th>
+                                <th class="px-2 py-3 w-3/12">Item Name*</th>
+                                <th class="px-2 py-3 w-1/12">Price*</th>
+                                <th class="px-2 py-3 w-2/12">Category*</th>
+                                <th class="px-2 py-3 w-5/12">Image Link*</th>
+                            </tr>
+                        </thead>
+                        <tbody id="menu-form-body" class="divide-y">
+                            <!-- 15 rows will be generated here by JS -->
+                        </tbody>
+                    </table>
+                </div>
             </div>
 
             <div class="p-4 bg-gray-50 border-t">
                  <button id="save-all-btn" class="w-full bg-brand text-white font-bold py-3 px-4 rounded-md hover:bg-brand-dark transition duration-300">
-                    Save All Items to Menu
+                    Save All New Items to Menu
                 </button>
                  <p id="status-message" class="mt-4 text-center font-semibold"></p>
             </div>
@@ -56,7 +70,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-app.js";
-        import { getFirestore, collection, writeBatch, doc } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-firestore.js";
+        import { getFirestore, collection, writeBatch, doc, getDocs, query, onSnapshot } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyCuepnUYt_rDEffSraYycHxYrm5sDlXM6s",
@@ -74,9 +88,50 @@
         const formBody = document.getElementById('menu-form-body');
         const saveBtn = document.getElementById('save-all-btn');
         const statusMessage = document.getElementById('status-message');
+        const existingMenuList = document.getElementById('existing-menu-list');
         const NUM_ROWS = 15;
 
-        // Generate the 15 empty rows on page load
+        // NEW: Function to fetch and display existing menu items
+        function listenForExistingMenu() {
+            const q = query(collection(db, "menu"));
+            onSnapshot(q, (querySnapshot) => {
+                const loadingMsg = document.getElementById('loading-existing');
+                if (querySnapshot.empty) {
+                    loadingMsg.textContent = 'No menu items found in the database.';
+                    return;
+                }
+
+                const allItems = [];
+                querySnapshot.forEach(doc => allItems.push(doc.data()));
+
+                const menuByCategory = allItems.reduce((acc, item) => {
+                    const category = item.category || 'Uncategorized';
+                    if (!acc[category]) acc[category] = [];
+                    acc[category].push(item);
+                    return acc;
+                }, {});
+                
+                existingMenuList.innerHTML = ''; // Clear previous content
+
+                const sortedCategories = Object.keys(menuByCategory).sort();
+
+                sortedCategories.forEach(category => {
+                    const categoryDiv = document.createElement('div');
+                    const itemsHtml = menuByCategory[category]
+                        .sort((a,b) => a.name.localeCompare(b.name))
+                        .map(item => `<li class="text-sm text-gray-700">${item.name} - ₹${item.price}</li>`)
+                        .join('');
+                    
+                    categoryDiv.innerHTML = `
+                        <h3 class="font-bold text-brand">${category}</h3>
+                        <ul class="list-disc list-inside pl-2">${itemsHtml}</ul>
+                    `;
+                    existingMenuList.appendChild(categoryDiv);
+                });
+            });
+        }
+
+        // Generate the 15 empty rows for adding new items
         function generateRows() {
             let rowsHtml = '';
             for (let i = 1; i <= NUM_ROWS; i++) {
@@ -106,14 +161,13 @@
                 const priceInput = row.querySelector('.item-price');
                 const categoryInput = row.querySelector('.item-category');
 
-                // Only process rows where at least a name and price are filled
                 if (nameInput.value.trim() && priceInput.value) {
                     const newItem = {
                         name: nameInput.value.trim(),
                         price: parseFloat(priceInput.value),
                         category: categoryInput.value.trim() || 'Uncategorized',
                         imageUrl: row.querySelector('.item-image-url').value.trim(),
-                        description: '', // Can be added to the table if needed
+                        description: '',
                         discount: 0,
                         stockStatus: 'in_stock'
                     };
@@ -122,14 +176,13 @@
             });
 
             if (itemsToAdd.length === 0) {
-                statusMessage.textContent = 'No items to add. Please fill out at least one row.';
+                statusMessage.textContent = 'No new items to add. Please fill out at least one row.';
                 statusMessage.className = 'mt-4 text-center font-semibold text-yellow-600';
                 saveBtn.disabled = false;
-                saveBtn.textContent = 'Save All Items to Menu';
+                saveBtn.textContent = 'Save All New Items to Menu';
                 return;
             }
 
-            // Add each valid item to the batch
             itemsToAdd.forEach(item => {
                 const newDocRef = doc(collection(db, "menu"));
                 batch.set(newDocRef, item);
@@ -137,20 +190,21 @@
 
             try {
                 await batch.commit();
-                statusMessage.textContent = `Successfully added ${itemsToAdd.length} items to the menu!`;
+                statusMessage.textContent = `Successfully added ${itemsToAdd.length} new items!`;
                 statusMessage.className = 'mt-4 text-center font-semibold text-green-600';
-                generateRows(); // Clear the form by regenerating rows
+                generateRows(); // Clear the form
             } catch (error) {
                 console.error("Error adding items in bulk: ", error);
                 statusMessage.textContent = 'An error occurred. Check the console.';
                 statusMessage.className = 'mt-4 text-center font-semibold text-red-600';
             } finally {
                 saveBtn.disabled = false;
-                saveBtn.textContent = 'Save All Items to Menu';
+                saveBtn.textContent = 'Save All New Items to Menu';
             }
         });
 
         // Initial setup
+        listenForExistingMenu();
         generateRows();
 
     </script>
