@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bulk Menu Adder - Artevia Palette</title>
+    <title>Menu Editor - Artevia Palette</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         .bg-brand { background-color: #a43c1a; }
@@ -17,6 +17,11 @@
             background-color: #f9fafb; /* gray-50 */
             z-index: 10;
         }
+        .editable-input:disabled {
+            background-color: transparent;
+            border-color: transparent;
+            color: #374151; /* gray-700 */
+        }
     </style>
 </head>
 <body class="bg-gray-100 text-gray-800 font-sans">
@@ -25,16 +30,29 @@
         <div class="bg-white rounded-lg shadow-xl overflow-hidden">
             <div class="text-center bg-brand p-4">
                 <img src="https://raw.githubusercontent.com/Sarup098/artevia/main/Artevia_Palette_Logo.png" alt="Artevia Palette Logo" class="h-24 w-auto mx-auto mb-2">
-                <h1 class="text-2xl font-bold text-white">Bulk Menu Adder</h1>
-                <p class="text-gray-200">Review existing items and add new ones below.</p>
+                <h1 class="text-2xl font-bold text-white">Menu Editor</h1>
+                <p class="text-gray-200">Manage your existing menu and add new items in bulk.</p>
             </div>
             
-            <!-- NEW: Display for existing items -->
+            <!-- NEW: Editable table for existing items -->
             <div class="p-4 border-b">
-                <h2 class="font-bold text-lg mb-2 text-gray-800">Existing Menu Items</h2>
-                <div id="existing-menu-list" class="max-h-[40vh] overflow-y-auto space-y-4">
+                <h2 class="font-bold text-lg mb-2 text-gray-800">Manage Existing Menu</h2>
+                <div id="existing-menu-container" class="max-h-[50vh] overflow-y-auto">
                     <p id="loading-existing" class="text-gray-500">Loading existing items...</p>
-                    <!-- JS will populate this with categories and items -->
+                    <table class="w-full text-sm hidden">
+                        <thead class="text-left text-gray-700">
+                            <tr>
+                                <th class="px-2 py-3">Item Name</th>
+                                <th class="px-2 py-3">Price</th>
+                                <th class="px-2 py-3">Category</th>
+                                <th class="px-2 py-3">Image Link</th>
+                                <th class="px-2 py-3">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="existing-menu-body" class="divide-y">
+                            <!-- JS will populate this with editable rows -->
+                        </tbody>
+                    </table>
                 </div>
             </div>
 
@@ -70,7 +88,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-app.js";
-        import { getFirestore, collection, writeBatch, doc, getDocs, query, onSnapshot } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-firestore.js";
+        import { getFirestore, collection, writeBatch, doc, onSnapshot, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyCuepnUYt_rDEffSraYycHxYrm5sDlXM6s",
@@ -88,50 +106,101 @@
         const formBody = document.getElementById('menu-form-body');
         const saveBtn = document.getElementById('save-all-btn');
         const statusMessage = document.getElementById('status-message');
-        const existingMenuList = document.getElementById('existing-menu-list');
+        const existingMenuContainer = document.getElementById('existing-menu-container');
+        const existingMenuBody = document.getElementById('existing-menu-body');
         const NUM_ROWS = 15;
 
-        // NEW: Function to fetch and display existing menu items
+        // NEW: Function to display existing menu in an editable table
         function listenForExistingMenu() {
-            const q = query(collection(db, "menu"));
-            onSnapshot(q, (querySnapshot) => {
+            onSnapshot(collection(db, "menu"), (querySnapshot) => {
                 const loadingMsg = document.getElementById('loading-existing');
+                const table = existingMenuContainer.querySelector('table');
+
                 if (querySnapshot.empty) {
+                    table.classList.add('hidden');
                     loadingMsg.textContent = 'No menu items found in the database.';
+                    loadingMsg.classList.remove('hidden');
                     return;
                 }
-
-                const allItems = [];
-                querySnapshot.forEach(doc => allItems.push(doc.data()));
-
-                const menuByCategory = allItems.reduce((acc, item) => {
-                    const category = item.category || 'Uncategorized';
-                    if (!acc[category]) acc[category] = [];
-                    acc[category].push(item);
-                    return acc;
-                }, {});
                 
-                existingMenuList.innerHTML = ''; // Clear previous content
+                table.classList.remove('hidden');
+                loadingMsg.classList.add('hidden');
+                
+                const allItems = [];
+                querySnapshot.forEach(doc => allItems.push({ id: doc.id, ...doc.data() }));
 
-                const sortedCategories = Object.keys(menuByCategory).sort();
+                allItems.sort((a,b) => a.name.localeCompare(b.name));
 
-                sortedCategories.forEach(category => {
-                    const categoryDiv = document.createElement('div');
-                    const itemsHtml = menuByCategory[category]
-                        .sort((a,b) => a.name.localeCompare(b.name))
-                        .map(item => `<li class="text-sm text-gray-700">${item.name} - ₹${item.price}</li>`)
-                        .join('');
-                    
-                    categoryDiv.innerHTML = `
-                        <h3 class="font-bold text-brand">${category}</h3>
-                        <ul class="list-disc list-inside pl-2">${itemsHtml}</ul>
-                    `;
-                    existingMenuList.appendChild(categoryDiv);
-                });
+                existingMenuBody.innerHTML = allItems.map(item => `
+                    <tr class="existing-item-row" data-id="${item.id}">
+                        <td class="px-2 py-1"><input type="text" value="${item.name}" class="edit-name w-full p-1 border rounded text-xs editable-input" disabled></td>
+                        <td class="px-2 py-1"><input type="number" value="${item.price}" class="edit-price w-full p-1 border rounded text-xs editable-input" disabled></td>
+                        <td class="px-2 py-1"><input type="text" value="${item.category}" class="edit-category w-full p-1 border rounded text-xs editable-input" disabled></td>
+                        <td class="px-2 py-1"><input type="url" value="${item.imageUrl}" class="edit-image-url w-full p-1 border rounded text-xs editable-input" disabled></td>
+                        <td class="px-2 py-1 text-center">
+                            <button class="edit-btn text-blue-600 hover:text-blue-800 text-xs font-semibold">Edit</button>
+                            <button class="save-btn text-green-600 hover:text-green-800 text-xs font-semibold hidden">Save</button>
+                            <button class="cancel-btn text-gray-600 hover:text-gray-800 text-xs font-semibold hidden">Cancel</button>
+                            <button class="delete-btn text-red-600 hover:text-red-800 text-xs font-semibold ml-2">Delete</button>
+                        </td>
+                    </tr>
+                `).join('');
             });
         }
 
-        // Generate the 15 empty rows for adding new items
+        existingMenuBody.addEventListener('click', async (e) => {
+            const row = e.target.closest('.existing-item-row');
+            if (!row) return;
+            const itemId = row.dataset.id;
+            const inputs = row.querySelectorAll('.editable-input');
+
+            if (e.target.matches('.edit-btn')) {
+                inputs.forEach(input => input.disabled = false);
+                row.querySelector('.edit-btn').classList.add('hidden');
+                row.querySelector('.save-btn').classList.remove('hidden');
+                row.querySelector('.cancel-btn').classList.remove('hidden');
+            }
+
+            if (e.target.matches('.cancel-btn')) {
+                // To-do: could implement resetting to original values, for now just disable
+                inputs.forEach(input => input.disabled = true);
+                row.querySelector('.edit-btn').classList.remove('hidden');
+                row.querySelector('.save-btn').classList.add('hidden');
+                row.querySelector('.cancel-btn').classList.add('hidden');
+            }
+
+            if (e.target.matches('.save-btn')) {
+                const updatedData = {
+                    name: row.querySelector('.edit-name').value,
+                    price: parseFloat(row.querySelector('.edit-price').value),
+                    category: row.querySelector('.edit-category').value,
+                    imageUrl: row.querySelector('.edit-image-url').value,
+                };
+                
+                try {
+                    await updateDoc(doc(db, "menu", itemId), updatedData);
+                    inputs.forEach(input => input.disabled = true);
+                    row.querySelector('.edit-btn').classList.remove('hidden');
+                    row.querySelector('.save-btn').classList.add('hidden');
+                    row.querySelector('.cancel-btn').classList.add('hidden');
+                } catch (error) {
+                    console.error("Error updating item: ", error);
+                    alert("Failed to update item.");
+                }
+            }
+
+            if (e.target.matches('.delete-btn')) {
+                if (confirm('Are you sure you want to delete this item permanently?')) {
+                    try {
+                        await deleteDoc(doc(db, "menu", itemId));
+                    } catch (error) {
+                        console.error("Error deleting item: ", error);
+                        alert("Failed to delete item.");
+                    }
+                }
+            }
+        });
+
         function generateRows() {
             let rowsHtml = '';
             for (let i = 1; i <= NUM_ROWS; i++) {
