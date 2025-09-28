@@ -110,7 +110,7 @@
         const existingMenuBody = document.getElementById('existing-menu-body');
         const NUM_ROWS = 15;
 
-        // NEW: Function to display existing menu in an editable table
+        // UPDATED: Function to group items by category
         function listenForExistingMenu() {
             onSnapshot(collection(db, "menu"), (querySnapshot) => {
                 const loadingMsg = document.getElementById('loading-existing');
@@ -129,22 +129,49 @@
                 const allItems = [];
                 querySnapshot.forEach(doc => allItems.push({ id: doc.id, ...doc.data() }));
 
-                allItems.sort((a,b) => a.name.localeCompare(b.name));
+                // Group items by category
+                const menuByCategory = allItems.reduce((acc, item) => {
+                    const category = item.category || 'Uncategorized';
+                    if (!acc[category]) {
+                        acc[category] = [];
+                    }
+                    acc[category].push(item);
+                    return acc;
+                }, {});
 
-                existingMenuBody.innerHTML = allItems.map(item => `
-                    <tr class="existing-item-row" data-id="${item.id}">
-                        <td class="px-2 py-1"><input type="text" value="${item.name}" class="edit-name w-full p-1 border rounded text-xs editable-input" disabled></td>
-                        <td class="px-2 py-1"><input type="number" value="${item.price}" class="edit-price w-full p-1 border rounded text-xs editable-input" disabled></td>
-                        <td class="px-2 py-1"><input type="text" value="${item.category}" class="edit-category w-full p-1 border rounded text-xs editable-input" disabled></td>
-                        <td class="px-2 py-1"><input type="url" value="${item.imageUrl}" class="edit-image-url w-full p-1 border rounded text-xs editable-input" disabled></td>
-                        <td class="px-2 py-1 text-center">
-                            <button class="edit-btn text-blue-600 hover:text-blue-800 text-xs font-semibold">Edit</button>
-                            <button class="save-btn text-green-600 hover:text-green-800 text-xs font-semibold hidden">Save</button>
-                            <button class="cancel-btn text-gray-600 hover:text-gray-800 text-xs font-semibold hidden">Cancel</button>
-                            <button class="delete-btn text-red-600 hover:text-red-800 text-xs font-semibold ml-2">Delete</button>
-                        </td>
-                    </tr>
-                `).join('');
+                const sortedCategories = Object.keys(menuByCategory).sort();
+                let allRowsHtml = '';
+
+                sortedCategories.forEach(category => {
+                    // Add a category header row
+                    allRowsHtml += `
+                        <tr class="bg-gray-100">
+                            <td colspan="5" class="px-2 py-2 font-bold text-gray-800">${category}</td>
+                        </tr>
+                    `;
+
+                    // Sort items within the category by name and generate rows
+                    menuByCategory[category]
+                        .sort((a,b) => a.name.localeCompare(b.name))
+                        .forEach(item => {
+                            allRowsHtml += `
+                                <tr class="existing-item-row" data-id="${item.id}">
+                                    <td class="px-2 py-1"><input type="text" value="${item.name}" class="edit-name w-full p-1 border rounded text-xs editable-input" disabled></td>
+                                    <td class="px-2 py-1"><input type="number" value="${item.price}" class="edit-price w-full p-1 border rounded text-xs editable-input" disabled></td>
+                                    <td class="px-2 py-1"><input type="text" value="${item.category}" class="edit-category w-full p-1 border rounded text-xs editable-input" disabled></td>
+                                    <td class="px-2 py-1"><input type="url" value="${item.imageUrl || ''}" class="edit-image-url w-full p-1 border rounded text-xs editable-input" disabled></td>
+                                    <td class="px-2 py-1 text-center">
+                                        <button class="edit-btn text-blue-600 hover:text-blue-800 text-xs font-semibold">Edit</button>
+                                        <button class="save-btn text-green-600 hover:text-green-800 text-xs font-semibold hidden">Save</button>
+                                        <button class="cancel-btn text-gray-600 hover:text-gray-800 text-xs font-semibold hidden">Cancel</button>
+                                        <button class="delete-btn text-red-600 hover:text-red-800 text-xs font-semibold ml-2">Delete</button>
+                                    </td>
+                                </tr>
+                            `;
+                        });
+                });
+
+                existingMenuBody.innerHTML = allRowsHtml;
             });
         }
 
