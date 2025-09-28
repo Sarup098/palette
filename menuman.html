@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Manual Menu Adder - Artevia Palette</title>
+    <title>Bulk Menu Adder - Artevia Palette</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         .bg-brand { background-color: #a43c1a; }
@@ -11,63 +11,53 @@
         .text-brand { color: #a43c1a; }
         .border-brand { border-color: #a43c1a; }
         .ring-brand:focus { --tw-ring-color: #a43c1a; }
+        th {
+            position: sticky;
+            top: 0;
+            background-color: #f9fafb; /* gray-50 */
+        }
     </style>
 </head>
 <body class="bg-gray-100 text-gray-800 font-sans">
 
-    <div class="container mx-auto p-4 md:p-8 max-w-lg">
-        <div class="bg-white rounded-lg shadow-xl p-6">
-            <div class="text-center mb-6 bg-brand rounded-lg p-4">
+    <div class="container mx-auto p-4 md:p-8">
+        <div class="bg-white rounded-lg shadow-xl overflow-hidden">
+            <div class="text-center bg-brand p-4">
                 <img src="https://raw.githubusercontent.com/Sarup098/artevia/main/Artevia_Palette_Logo.png" alt="Artevia Palette Logo" class="h-24 w-auto mx-auto mb-2">
-                <h1 class="text-2xl font-bold text-white">Manual Menu Adder</h1>
-                <p class="text-gray-200">Use this form to add items to your menu one by one.</p>
+                <h1 class="text-2xl font-bold text-white">Bulk Menu Adder</h1>
+                <p class="text-gray-200">Add up to 15 items at once. Fill a row to add an item.</p>
             </div>
             
-            <form id="add-item-form">
-                <div class="mb-4">
-                    <label for="item-name" class="block text-sm font-medium text-gray-700 mb-1">Item Name</label>
-                    <input type="text" id="item-name" placeholder="e.g., Cappuccino" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-brand focus:border-brand" required>
-                </div>
+            <div class="max-h-[60vh] overflow-y-auto">
+                <table class="w-full text-sm">
+                    <thead class="text-left text-gray-700">
+                        <tr>
+                            <th class="px-2 py-3 w-1/12">#</th>
+                            <th class="px-2 py-3 w-3/12">Item Name*</th>
+                            <th class="px-2 py-3 w-1/12">Price*</th>
+                            <th class="px-2 py-3 w-2/12">Category*</th>
+                            <th class="px-2 py-3 w-5/12">Image Link*</th>
+                        </tr>
+                    </thead>
+                    <tbody id="menu-form-body" class="divide-y">
+                        <!-- 15 rows will be generated here by JS -->
+                    </tbody>
+                </table>
+            </div>
 
-                <div class="grid grid-cols-2 gap-4 mb-4">
-                    <div>
-                        <label for="item-price" class="block text-sm font-medium text-gray-700 mb-1">Price (₹)</label>
-                        <input type="number" id="item-price" placeholder="e.g., 160" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-brand focus:border-brand" required>
-                    </div>
-                    <div>
-                        <label for="item-category" class="block text-sm font-medium text-gray-700 mb-1">Category</label>
-                        <input type="text" id="item-category" placeholder="e.g., Coffee" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-brand focus:border-brand" required>
-                    </div>
-                </div>
-                
-                <div class="mb-4">
-                    <div class="flex justify-between items-center mb-1">
-                        <label for="item-image-url" class="block text-sm font-medium text-gray-700">Image Link</label>
-                        <!-- NEW: Link to image hosting platform -->
-                        <a href="https://postimages.org/" target="_blank" rel="noopener noreferrer" class="text-xs bg-gray-200 text-gray-700 px-2 py-1 rounded-md hover:bg-gray-300 transition-colors">Get Image Link</a>
-                    </div>
-                    <input type="url" id="item-image-url" placeholder="Paste direct image URL here" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-brand focus:border-brand" required>
-                </div>
-                
-                <div class="mb-6">
-                    <label for="item-description" class="block text-sm font-medium text-gray-700 mb-1">Description (Optional)</label>
-                    <textarea id="item-description" rows="3" placeholder="A short, tasty description of the item." class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-brand focus:border-brand"></textarea>
-                </div>
-
-                <button id="add-item-btn" type="submit" class="w-full bg-brand text-white font-bold py-3 px-4 rounded-md hover:bg-brand-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand transition duration-300">
-                    Add Item to Menu
+            <div class="p-4 bg-gray-50 border-t">
+                 <button id="save-all-btn" class="w-full bg-brand text-white font-bold py-3 px-4 rounded-md hover:bg-brand-dark transition duration-300">
+                    Save All Items to Menu
                 </button>
-            </form>
-            
-            <div id="status-message" class="mt-4 text-center"></div>
+                 <p id="status-message" class="mt-4 text-center font-semibold"></p>
+            </div>
         </div>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-app.js";
-        import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-firestore.js";
+        import { getFirestore, collection, writeBatch, doc } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-firestore.js";
 
-        // --- Firebase Configuration ---
         const firebaseConfig = {
             apiKey: "AIzaSyCuepnUYt_rDEffSraYycHxYrm5sDlXM6s",
             authDomain: "palette-orders.firebaseapp.com",
@@ -80,46 +70,90 @@
 
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
-        const menuCollection = collection(db, "menu");
 
-        const addItemForm = document.getElementById('add-item-form');
-        const addItemBtn = document.getElementById('add-item-btn');
+        const formBody = document.getElementById('menu-form-body');
+        const saveBtn = document.getElementById('save-all-btn');
         const statusMessage = document.getElementById('status-message');
+        const NUM_ROWS = 15;
 
-        addItemForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
+        // Generate the 15 empty rows on page load
+        function generateRows() {
+            let rowsHtml = '';
+            for (let i = 1; i <= NUM_ROWS; i++) {
+                rowsHtml += `
+                    <tr class="menu-item-row">
+                        <td class="px-2 py-1 text-center text-gray-500">${i}</td>
+                        <td class="px-2 py-1"><input type="text" placeholder="Item Name" class="item-name w-full p-1 border rounded text-xs"></td>
+                        <td class="px-2 py-1"><input type="number" placeholder="₹" class="item-price w-full p-1 border rounded text-xs"></td>
+                        <td class="px-2 py-1"><input type="text" placeholder="Category" class="item-category w-full p-1 border rounded text-xs"></td>
+                        <td class="px-2 py-1"><input type="url" placeholder="Image URL" class="item-image-url w-full p-1 border rounded text-xs"></td>
+                    </tr>
+                `;
+            }
+            formBody.innerHTML = rowsHtml;
+        }
 
-            addItemBtn.disabled = true;
-            addItemBtn.textContent = 'Adding...';
+        saveBtn.addEventListener('click', async () => {
+            saveBtn.disabled = true;
+            saveBtn.textContent = 'Saving...';
             statusMessage.textContent = '';
 
-            const newItem = {
-                name: document.getElementById('item-name').value,
-                price: parseFloat(document.getElementById('item-price').value),
-                category: document.getElementById('item-category').value,
-                imageUrl: document.getElementById('item-image-url').value,
-                description: document.getElementById('item-description').value,
-                discount: 0,
-                stockStatus: 'in_stock' // Default to in stock
-            };
+            const batch = writeBatch(db);
+            const itemsToAdd = [];
+
+            document.querySelectorAll('.menu-item-row').forEach(row => {
+                const nameInput = row.querySelector('.item-name');
+                const priceInput = row.querySelector('.item-price');
+                const categoryInput = row.querySelector('.item-category');
+
+                // Only process rows where at least a name and price are filled
+                if (nameInput.value.trim() && priceInput.value) {
+                    const newItem = {
+                        name: nameInput.value.trim(),
+                        price: parseFloat(priceInput.value),
+                        category: categoryInput.value.trim() || 'Uncategorized',
+                        imageUrl: row.querySelector('.item-image-url').value.trim(),
+                        description: '', // Can be added to the table if needed
+                        discount: 0,
+                        stockStatus: 'in_stock'
+                    };
+                    itemsToAdd.push(newItem);
+                }
+            });
+
+            if (itemsToAdd.length === 0) {
+                statusMessage.textContent = 'No items to add. Please fill out at least one row.';
+                statusMessage.className = 'mt-4 text-center font-semibold text-yellow-600';
+                saveBtn.disabled = false;
+                saveBtn.textContent = 'Save All Items to Menu';
+                return;
+            }
+
+            // Add each valid item to the batch
+            itemsToAdd.forEach(item => {
+                const newDocRef = doc(collection(db, "menu"));
+                batch.set(newDocRef, item);
+            });
 
             try {
-                await addDoc(menuCollection, newItem);
-                statusMessage.textContent = `"${newItem.name}" was added successfully!`;
-                statusMessage.className = 'mt-4 text-center text-green-600 font-bold';
-                addItemForm.reset();
+                await batch.commit();
+                statusMessage.textContent = `Successfully added ${itemsToAdd.length} items to the menu!`;
+                statusMessage.className = 'mt-4 text-center font-semibold text-green-600';
+                generateRows(); // Clear the form by regenerating rows
             } catch (error) {
-                console.error("Error adding item: ", error);
+                console.error("Error adding items in bulk: ", error);
                 statusMessage.textContent = 'An error occurred. Check the console.';
-                statusMessage.className = 'mt-4 text-center text-red-600';
+                statusMessage.className = 'mt-4 text-center font-semibold text-red-600';
             } finally {
-                addItemBtn.disabled = false;
-                addItemBtn.textContent = 'Add Item to Menu';
+                saveBtn.disabled = false;
+                saveBtn.textContent = 'Save All Items to Menu';
             }
         });
+
+        // Initial setup
+        generateRows();
 
     </script>
 </body>
 </html>
-
 
