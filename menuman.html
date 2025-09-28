@@ -62,7 +62,14 @@
 
             <!-- Section for adding new items -->
             <div class="p-4 border-b">
-                <h2 class="font-bold text-lg mb-2 text-gray-800">Add New Items (Up to 15 at once)</h2>
+                <div class="flex justify-between items-center mb-2">
+                    <h2 class="font-bold text-lg text-gray-800">Add New Items</h2>
+                    <!-- NEW: Category pre-fill dropdown -->
+                    <div class="flex items-center gap-2">
+                        <label for="prefill-category" class="text-sm font-medium">Pre-fill Category:</label>
+                        <select id="prefill-category" class="p-1 border rounded text-xs"></select>
+                    </div>
+                </div>
                 <div class="max-h-[40vh] overflow-y-auto">
                     <table class="w-full text-sm">
                         <thead class="text-left text-gray-700">
@@ -76,9 +83,13 @@
                             </tr>
                         </thead>
                         <tbody id="menu-form-body" class="divide-y">
-                            <!-- 15 rows will be generated here by JS -->
+                            <!-- Rows will be generated here by JS -->
                         </tbody>
                     </table>
+                </div>
+                <!-- NEW: Add more rows button -->
+                <div class="mt-2 text-center">
+                    <button id="add-more-rows-btn" class="text-sm text-blue-600 hover:text-blue-800 font-semibold">+ Add 5 More Rows</button>
                 </div>
             </div>
 
@@ -113,8 +124,11 @@
         const statusMessage = document.getElementById('status-message');
         const existingMenuContainer = document.getElementById('existing-menu-container');
         const existingMenuBody = document.getElementById('existing-menu-body');
-        const NUM_ROWS = 15;
+        const prefillCategorySelect = document.getElementById('prefill-category');
+        const addMoreRowsBtn = document.getElementById('add-more-rows-btn');
+        
         let existingItems = [];
+        let addRowCount = 0;
 
         const levenshteinDistance = (s1, s2) => {
             s1 = s1.toLowerCase(); s2 = s2.toLowerCase();
@@ -164,6 +178,9 @@
 
                 const sortedCategories = Object.keys(menuByCategory).sort();
                 let allRowsHtml = '';
+
+                // NEW: Populate pre-fill dropdown
+                prefillCategorySelect.innerHTML = '<option value="">Select to pre-fill...</option>' + sortedCategories.map(c => `<option value="${c}">${c}</option>`).join('');
 
                 sortedCategories.forEach(category => {
                     allRowsHtml += `<tr class="bg-gray-100"><td colspan="6" class="px-2 py-2 font-bold text-gray-800">${category}</td></tr>`;
@@ -249,12 +266,13 @@
             }
         });
 
-        function generateRows() {
+        // NEW: Function to add a specified number of rows
+        function addMoreInputRows(count) {
             let rowsHtml = '';
-            for (let i = 1; i <= NUM_ROWS; i++) {
+            for (let i = 1; i <= count; i++) {
                 rowsHtml += `
                     <tr class="add-item-row">
-                        <td class="px-2 py-1 text-center text-gray-500">${i}</td>
+                        <td class="px-2 py-1 text-center text-gray-500">${addRowCount + i}</td>
                         <td class="px-2 py-1"><input type="text" placeholder="Item Name" class="item-name w-full p-1 border rounded text-xs"></td>
                         <td class="px-2 py-1"><input type="number" placeholder="₹" class="item-price w-full p-1 border rounded text-xs"></td>
                         <td class="px-2 py-1"><input type="text" placeholder="Category" class="item-category w-full p-1 border rounded text-xs"></td>
@@ -267,8 +285,21 @@
                         <td class="px-2 py-1"><input type="url" placeholder="Image URL" class="item-image-url w-full p-1 border rounded text-xs"></td>
                     </tr>`;
             }
-            formBody.innerHTML = rowsHtml;
+            formBody.innerHTML += rowsHtml;
+            addRowCount += count;
         }
+        
+        addMoreRowsBtn.addEventListener('click', () => addMoreInputRows(5));
+
+        prefillCategorySelect.addEventListener('change', (e) => {
+            const category = e.target.value;
+            if (!category) return;
+            document.querySelectorAll('.add-item-row .item-category').forEach(input => {
+                if (!input.value) { // Only fill if empty
+                    input.value = category;
+                }
+            });
+        });
 
         saveBtn.addEventListener('click', async () => {
             saveBtn.disabled = true;
@@ -279,6 +310,7 @@
             const itemsToAdd = [];
             const addRows = document.querySelectorAll('.add-item-row');
             let validationFailed = false;
+            const existingItemNamesLower = existingItems.map(item => item.name.toLowerCase().trim());
 
             for (const row of addRows) {
                 const nameInput = row.querySelector('.item-name');
@@ -287,7 +319,6 @@
 
                 const itemName = nameInput.value.trim();
                 const itemNameLower = itemName.toLowerCase();
-                const existingItemNamesLower = existingItems.map(item => item.name.toLowerCase().trim());
 
                 if (existingItemNamesLower.includes(itemNameLower)) {
                     statusMessage.textContent = `Error: Item "${itemName}" already exists.`;
@@ -352,7 +383,9 @@
                 await batch.commit();
                 statusMessage.textContent = `Successfully added ${itemsToAdd.length} new items!`;
                 statusMessage.className = 'mt-4 text-center font-semibold text-green-600';
-                generateRows(); // Clear the form
+                formBody.innerHTML = ''; // Clear the form
+                addRowCount = 0;
+                addMoreInputRows(5); // Add fresh 5 rows
             } catch (error) {
                 console.error("Error adding items in bulk: ", error);
                 statusMessage.textContent = 'An error occurred. Check the console.';
@@ -365,7 +398,7 @@
 
         // Initial setup
         listenForExistingMenu();
-        generateRows();
+        addMoreInputRows(5); // Start with 5 rows
 
     </script>
 </body>
