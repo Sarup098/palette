@@ -17,10 +17,14 @@
             background-color: #f9fafb; /* gray-50 */
             z-index: 10;
         }
-        .editable-input:disabled {
+        .editable-input:disabled, .editable-select:disabled {
             background-color: transparent;
             border-color: transparent;
             color: #374151; /* gray-700 */
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+            padding-left: 0.25rem;
         }
     </style>
 </head>
@@ -34,7 +38,6 @@
                 <p class="text-gray-200">Manage your existing menu and add new items in bulk.</p>
             </div>
             
-            <!-- NEW: Editable table for existing items -->
             <div class="p-4 border-b">
                 <h2 class="font-bold text-lg mb-2 text-gray-800">Manage Existing Menu</h2>
                 <div id="existing-menu-container" class="max-h-[50vh] overflow-y-auto">
@@ -45,6 +48,7 @@
                                 <th class="px-2 py-3">Item Name</th>
                                 <th class="px-2 py-3">Price</th>
                                 <th class="px-2 py-3">Category</th>
+                                <th class="px-2 py-3">Type</th>
                                 <th class="px-2 py-3">Image Link</th>
                                 <th class="px-2 py-3">Actions</th>
                             </tr>
@@ -64,10 +68,11 @@
                         <thead class="text-left text-gray-700">
                             <tr>
                                 <th class="px-2 py-3 w-1/12">#</th>
-                                <th class="px-2 py-3 w-3/12">Item Name*</th>
+                                <th class="px-2 py-3 w-3/12">Name*</th>
                                 <th class="px-2 py-3 w-1/12">Price*</th>
                                 <th class="px-2 py-3 w-2/12">Category*</th>
-                                <th class="px-2 py-3 w-5/12">Image Link*</th>
+                                <th class="px-2 py-3 w-1/12">Type*</th>
+                                <th class="px-2 py-3 w-4/12">Image Link*</th>
                             </tr>
                         </thead>
                         <tbody id="menu-form-body" class="divide-y">
@@ -109,8 +114,28 @@
         const existingMenuContainer = document.getElementById('existing-menu-container');
         const existingMenuBody = document.getElementById('existing-menu-body');
         const NUM_ROWS = 15;
+        let existingItems = [];
 
-        // UPDATED: Function to group items by category
+        const levenshteinDistance = (s1, s2) => {
+            s1 = s1.toLowerCase(); s2 = s2.toLowerCase();
+            const costs = [];
+            for (let i = 0; i <= s1.length; i++) {
+                let lastValue = i;
+                for (let j = 0; j <= s2.length; j++) {
+                    if (i === 0) costs[j] = j;
+                    else if (j > 0) {
+                        let newValue = costs[j - 1];
+                        if (s1.charAt(i - 1) !== s2.charAt(j - 1)) newValue = Math.min(Math.min(newValue, lastValue), costs[j]) + 1;
+                        costs[j - 1] = lastValue;
+                        lastValue = newValue;
+                    }
+                }
+                if (i > 0) costs[s2.length] = lastValue;
+            }
+            return costs[s2.length];
+        };
+
+
         function listenForExistingMenu() {
             onSnapshot(collection(db, "menu"), (querySnapshot) => {
                 const loadingMsg = document.getElementById('loading-existing');
@@ -120,21 +145,19 @@
                     table.classList.add('hidden');
                     loadingMsg.textContent = 'No menu items found in the database.';
                     loadingMsg.classList.remove('hidden');
+                    existingItems = [];
                     return;
                 }
                 
                 table.classList.remove('hidden');
                 loadingMsg.classList.add('hidden');
                 
-                const allItems = [];
-                querySnapshot.forEach(doc => allItems.push({ id: doc.id, ...doc.data() }));
+                existingItems = [];
+                querySnapshot.forEach(doc => existingItems.push({ id: doc.id, ...doc.data() }));
 
-                // Group items by category
-                const menuByCategory = allItems.reduce((acc, item) => {
+                const menuByCategory = existingItems.reduce((acc, item) => {
                     const category = item.category || 'Uncategorized';
-                    if (!acc[category]) {
-                        acc[category] = [];
-                    }
+                    if (!acc[category]) acc[category] = [];
                     acc[category].push(item);
                     return acc;
                 }, {});
@@ -143,22 +166,22 @@
                 let allRowsHtml = '';
 
                 sortedCategories.forEach(category => {
-                    // Add a category header row
-                    allRowsHtml += `
-                        <tr class="bg-gray-100">
-                            <td colspan="5" class="px-2 py-2 font-bold text-gray-800">${category}</td>
-                        </tr>
-                    `;
-
-                    // Sort items within the category by name and generate rows
+                    allRowsHtml += `<tr class="bg-gray-100"><td colspan="6" class="px-2 py-2 font-bold text-gray-800">${category}</td></tr>`;
                     menuByCategory[category]
                         .sort((a,b) => a.name.localeCompare(b.name))
                         .forEach(item => {
+                            const isVeg = item.vegStatus === 'veg';
                             allRowsHtml += `
                                 <tr class="existing-item-row" data-id="${item.id}">
                                     <td class="px-2 py-1"><input type="text" value="${item.name}" class="edit-name w-full p-1 border rounded text-xs editable-input" disabled></td>
                                     <td class="px-2 py-1"><input type="number" value="${item.price}" class="edit-price w-full p-1 border rounded text-xs editable-input" disabled></td>
                                     <td class="px-2 py-1"><input type="text" value="${item.category}" class="edit-category w-full p-1 border rounded text-xs editable-input" disabled></td>
+                                    <td class="px-2 py-1">
+                                        <select class="edit-veg-status w-full p-1 border rounded text-xs editable-select" disabled>
+                                            <option value="veg" ${isVeg ? 'selected' : ''}>Veg</option>
+                                            <option value="non-veg" ${!isVeg ? 'selected' : ''}>Non-Veg</option>
+                                        </select>
+                                    </td>
                                     <td class="px-2 py-1"><input type="url" value="${item.imageUrl || ''}" class="edit-image-url w-full p-1 border rounded text-xs editable-input" disabled></td>
                                     <td class="px-2 py-1 text-center">
                                         <button class="edit-btn text-blue-600 hover:text-blue-800 text-xs font-semibold">Edit</button>
@@ -166,11 +189,9 @@
                                         <button class="cancel-btn text-gray-600 hover:text-gray-800 text-xs font-semibold hidden">Cancel</button>
                                         <button class="delete-btn text-red-600 hover:text-red-800 text-xs font-semibold ml-2">Delete</button>
                                     </td>
-                                </tr>
-                            `;
+                                </tr>`;
                         });
                 });
-
                 existingMenuBody.innerHTML = allRowsHtml;
             });
         }
@@ -179,7 +200,7 @@
             const row = e.target.closest('.existing-item-row');
             if (!row) return;
             const itemId = row.dataset.id;
-            const inputs = row.querySelectorAll('.editable-input');
+            const inputs = row.querySelectorAll('.editable-input, .editable-select');
 
             if (e.target.matches('.edit-btn')) {
                 inputs.forEach(input => input.disabled = false);
@@ -189,7 +210,7 @@
             }
 
             if (e.target.matches('.cancel-btn')) {
-                // To-do: could implement resetting to original values, for now just disable
+                // To-do: reset to original values
                 inputs.forEach(input => input.disabled = true);
                 row.querySelector('.edit-btn').classList.remove('hidden');
                 row.querySelector('.save-btn').classList.add('hidden');
@@ -201,9 +222,9 @@
                     name: row.querySelector('.edit-name').value,
                     price: parseFloat(row.querySelector('.edit-price').value),
                     category: row.querySelector('.edit-category').value,
+                    vegStatus: row.querySelector('.edit-veg-status').value,
                     imageUrl: row.querySelector('.edit-image-url').value,
                 };
-                
                 try {
                     await updateDoc(doc(db, "menu", itemId), updatedData);
                     inputs.forEach(input => input.disabled = true);
@@ -232,14 +253,19 @@
             let rowsHtml = '';
             for (let i = 1; i <= NUM_ROWS; i++) {
                 rowsHtml += `
-                    <tr class="menu-item-row">
+                    <tr class="add-item-row">
                         <td class="px-2 py-1 text-center text-gray-500">${i}</td>
                         <td class="px-2 py-1"><input type="text" placeholder="Item Name" class="item-name w-full p-1 border rounded text-xs"></td>
                         <td class="px-2 py-1"><input type="number" placeholder="₹" class="item-price w-full p-1 border rounded text-xs"></td>
                         <td class="px-2 py-1"><input type="text" placeholder="Category" class="item-category w-full p-1 border rounded text-xs"></td>
+                        <td class="px-2 py-1">
+                            <select class="item-veg-status w-full p-1 border rounded text-xs">
+                                <option value="veg" selected>Veg</option>
+                                <option value="non-veg">Non-Veg</option>
+                            </select>
+                        </td>
                         <td class="px-2 py-1"><input type="url" placeholder="Image URL" class="item-image-url w-full p-1 border rounded text-xs"></td>
-                    </tr>
-                `;
+                    </tr>`;
             }
             formBody.innerHTML = rowsHtml;
         }
@@ -248,28 +274,65 @@
             saveBtn.disabled = true;
             saveBtn.textContent = 'Saving...';
             statusMessage.textContent = '';
+            document.querySelectorAll('.add-item-row').forEach(r => r.classList.remove('bg-red-100', 'bg-yellow-100'));
 
-            const batch = writeBatch(db);
             const itemsToAdd = [];
+            const addRows = document.querySelectorAll('.add-item-row');
+            let validationFailed = false;
 
-            document.querySelectorAll('.menu-item-row').forEach(row => {
+            for (const row of addRows) {
                 const nameInput = row.querySelector('.item-name');
                 const priceInput = row.querySelector('.item-price');
-                const categoryInput = row.querySelector('.item-category');
+                if (!nameInput.value.trim() || !priceInput.value) continue;
 
-                if (nameInput.value.trim() && priceInput.value) {
-                    const newItem = {
-                        name: nameInput.value.trim(),
-                        price: parseFloat(priceInput.value),
-                        category: categoryInput.value.trim() || 'Uncategorized',
-                        imageUrl: row.querySelector('.item-image-url').value.trim(),
-                        description: '',
-                        discount: 0,
-                        stockStatus: 'in_stock'
-                    };
-                    itemsToAdd.push(newItem);
+                const itemName = nameInput.value.trim();
+                const itemNameLower = itemName.toLowerCase();
+                const existingItemNamesLower = existingItems.map(item => item.name.toLowerCase().trim());
+
+                if (existingItemNamesLower.includes(itemNameLower)) {
+                    statusMessage.textContent = `Error: Item "${itemName}" already exists.`;
+                    statusMessage.className = 'mt-4 text-center font-semibold text-red-600';
+                    row.classList.add('bg-red-100');
+                    validationFailed = true;
+                    break;
                 }
-            });
+                
+                let similarItem = null;
+                for (const existingName of existingItemNamesLower) {
+                    const distance = levenshteinDistance(itemNameLower, existingName);
+                    if (distance > 0 && distance <= 2) {
+                        similarItem = existingItems.find(i => i.name.toLowerCase().trim() === existingName);
+                        break;
+                    }
+                }
+
+                if (similarItem) {
+                    if (!confirm(`Warning: The name "${itemName}" is very similar to "${similarItem.name}".\nDo you want to add it anyway?`)) {
+                        statusMessage.textContent = 'Save cancelled. Please review the highlighted item.';
+                        statusMessage.className = 'mt-4 text-center font-semibold text-yellow-600';
+                        row.classList.add('bg-yellow-100');
+                        validationFailed = true;
+                        break;
+                    }
+                }
+
+                itemsToAdd.push({
+                    name: itemName,
+                    price: parseFloat(priceInput.value),
+                    category: row.querySelector('.item-category').value.trim() || 'Uncategorized',
+                    vegStatus: row.querySelector('.item-veg-status').value,
+                    imageUrl: row.querySelector('.item-image-url').value.trim(),
+                    description: '',
+                    discount: 0,
+                    stockStatus: 'in_stock'
+                });
+            }
+
+            if (validationFailed) {
+                saveBtn.disabled = false;
+                saveBtn.textContent = 'Save All New Items to Menu';
+                return;
+            }
 
             if (itemsToAdd.length === 0) {
                 statusMessage.textContent = 'No new items to add. Please fill out at least one row.';
@@ -279,6 +342,7 @@
                 return;
             }
 
+            const batch = writeBatch(db);
             itemsToAdd.forEach(item => {
                 const newDocRef = doc(collection(db, "menu"));
                 batch.set(newDocRef, item);
