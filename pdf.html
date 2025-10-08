@@ -3,50 +3,76 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Menu - Artevia Palette</title>
+    <title>Printable Menu - Artevia Palette</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <style>
-        /* Custom Brand Color */
         .bg-brand { background-color: #a43c1a; }
         .text-brand { color: #a43c1a; }
         .border-brand { border-color: #a43c1a; }
 
-        /* Print-specific styles for window.print fallback */
         @media print {
             .non-printable { display: none !important; }
-            body { font-size: 10pt; }
-            .printable-menu { box-shadow: none; border: none; padding: 0; margin: 0; }
-            .menu-category, .menu-item-card { page-break-inside: avoid; }
-            * { color: #000 !important; background-color: #fff !important; }
+            body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .printable-menu-page {
+                page-break-after: always;
+                box-shadow: none !important;
+                border: none !important;
+                height: 100vh;
+            }
+            .bg-brand { background-color: #a43c1a !important; }
+        }
+        
+        /* A4 aspect ratio for screen view */
+        .a4-aspect {
+            width: 210mm;
+            min-height: 297mm;
         }
     </style>
 </head>
-<body class="bg-gray-100 font-sans p-4 md:p-8">
+<body class="bg-gray-200 font-serif">
 
-    <div class="container mx-auto max-w-6xl bg-white shadow-lg rounded-lg printable-menu">
-        <!-- Header -->
-        <header class="text-center p-8 bg-brand rounded-t-lg non-printable">
-            <img src="https://raw.githubusercontent.com/Sarup098/artevia/main/Artevia_Palette_Logo.png" alt="Artevia Palette Logo" class="h-32 w-auto mx-auto">
-        </header>
-        
-        <!-- Menu Content: Will be populated by JavaScript -->
-        <div id="menu-content" class="p-8">
-            <p id="loading-message" class="text-center text-gray-500">Loading menu from the database...</p>
+    <div class="container mx-auto my-8">
+        <!-- Print Button Container -->
+        <div id="print-button-container" class="text-center mb-4 non-printable">
+            <button onclick="window.print()" class="bg-brand text-white font-bold py-2 px-6 rounded-lg hover:bg-opacity-90 transition">
+                Print Menu
+            </button>
         </div>
 
-        <!-- Footer with Print Button -->
-        <footer id="print-button-container" class="p-4 text-center border-t non-printable">
-            <button id="generate-pdf-btn" class="bg-brand text-white font-bold py-2 px-6 rounded-lg hover:bg-opacity-90 transition disabled:bg-gray-400 disabled:cursor-wait" disabled>
-                Loading Menu...
-            </button>
-        </footer>
+        <div id="menu-container" class="space-y-8">
+            <!-- Page 1 -->
+            <div class="printable-menu-page bg-white max-w-3xl mx-auto shadow-lg a4-aspect">
+                <header class="text-center p-8 bg-brand">
+                    <img src="https://raw.githubusercontent.com/Sarup098/artevia/main/Artevia_Palette_Logo.png" alt="Artevia Palette Logo" class="h-40 w-auto mx-auto">
+                </header>
+                <div id="menu-page-1" class="p-12">
+                     <p class="text-center text-gray-500">Loading Page 1...</p>
+                </div>
+            </div>
+            <!-- Page 2 -->
+            <div class="printable-menu-page bg-white max-w-3xl mx-auto shadow-lg a4-aspect">
+                 <header class="text-center p-8 bg-brand">
+                    <img src="https://raw.githubusercontent.com/Sarup098/artevia/main/Artevia_Palette_Logo.png" alt="Artevia Palette Logo" class="h-40 w-auto mx-auto">
+                </header>
+                <div id="menu-page-2" class="p-12">
+                     <p class="text-center text-gray-500">Loading Page 2...</p>
+                </div>
+            </div>
+            <!-- Page 3 -->
+            <div class="printable-menu-page bg-white max-w-3xl mx-auto shadow-lg a4-aspect">
+                 <header class="text-center p-8 bg-brand">
+                    <img src="https://raw.githubusercontent.com/Sarup098/artevia/main/Artevia_Palette_Logo.png" alt="Artevia Palette Logo" class="h-40 w-auto mx-auto">
+                </header>
+                <div id="menu-page-3" class="p-12">
+                     <p class="text-center text-gray-500">Loading Page 3...</p>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-app.js";
         import { getFirestore, collection, getDocs, query } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-firestore.js";
-        import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-auth.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyCuepnUYt_rDEffSraYycHxYrm5sDlXM6s",
@@ -60,40 +86,23 @@
 
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
-        const auth = getAuth(app);
-        let menuDataForPDF = null;
-
-        async function preloadImages(imageElements) {
-            const promises = Array.from(imageElements).map(img => {
-                return new Promise((resolve) => {
-                    if (img.complete) {
-                        resolve(img);
-                    } else {
-                        img.onload = () => resolve(img);
-                        img.onerror = () => resolve(img);
-                    }
-                });
-            });
-            await Promise.all(promises);
-        }
 
         async function fetchAndRenderMenu() {
-            const menuContent = document.getElementById('menu-content');
-            const loadingMessage = document.getElementById('loading-message');
-            const pdfButton = document.getElementById('generate-pdf-btn');
+            const menuPage1 = document.getElementById('menu-page-1');
+            const menuPage2 = document.getElementById('menu-page-2');
+            const menuPage3 = document.getElementById('menu-page-3');
             
             try {
                 const q = query(collection(db, "menu"));
                 const querySnapshot = await getDocs(q);
 
                 if (querySnapshot.empty) {
-                    loadingMessage.textContent = 'No menu items found.';
-                    pdfButton.textContent = 'No Menu Found';
+                    menuPage1.innerHTML = '<p class="text-center text-gray-500">No menu items found.</p>';
                     return;
                 }
                 
                 const allItems = [];
-                querySnapshot.forEach((doc) => allItems.push({id: doc.id, ...doc.data()}));
+                querySnapshot.forEach((doc) => allItems.push(doc.data()));
 
                 const menuByCategory = allItems.reduce((acc, item) => {
                     const category = item.category || 'Uncategorized';
@@ -103,159 +112,78 @@
                 }, {});
 
                 const sortedCategories = Object.keys(menuByCategory).sort();
-                menuDataForPDF = { sortedCategories, menuByCategory }; 
 
-                menuContent.innerHTML = ''; 
+                // Clear loading messages
+                menuPage1.innerHTML = ''; 
+                menuPage2.innerHTML = '';
+                menuPage3.innerHTML = '';
 
-                for (const category of sortedCategories) {
+                // Distribute categories across 3 pages
+                const catsPerPage = Math.ceil(sortedCategories.length / 2); // 2 pages for items, 1 for specials
+                const page1Categories = sortedCategories.slice(0, catsPerPage);
+                const page2Categories = sortedCategories.slice(catsPerPage);
+
+                const renderCategory = (category, items) => {
                     const section = document.createElement('section');
-                    section.className = 'mb-12 menu-category';
+                    section.className = 'mb-8 menu-category';
                     
-                    const sortedItems = menuByCategory[category].sort((a, b) => a.name.localeCompare(b.name));
+                    items.sort((a, b) => a.name.localeCompare(b.name));
 
-                    let cardsHtml = '';
-                    sortedItems.forEach(item => {
-                        const placeholderText = encodeURIComponent(item.name);
-                        cardsHtml += `
-                            <div class="bg-white rounded-lg shadow-md overflow-hidden flex menu-item-card border">
-                                <img id="img-${item.id}" src="${item.imageUrl || `https://placehold.co/400x400/a43c1a/ffffff?text=${placeholderText}`}" 
-                                     alt="${item.name}" 
-                                     onerror="this.onerror=null; this.src='https://placehold.co/400x400/a43c1a/ffffff?text=${placeholderText}';"
-                                     class="h-28 w-28 object-cover aspect-square flex-shrink-0">
-                                <div class="p-4 flex flex-col flex-grow">
+                    let itemsHtml = '';
+                    items.forEach(item => {
+                        itemsHtml += `
+                            <div class="py-2">
+                                <div class="flex justify-between items-baseline">
                                     <h3 class="font-bold text-lg">${item.name}</h3>
-                                    <p class="text-sm text-gray-600 mt-1 flex-grow">${item.description || ''}</p>
-                                    <p class="font-bold text-lg text-right text-brand mt-2">₹${item.price}</p>
+                                    <p class="font-semibold text-lg text-right">₹${item.price}</p>
                                 </div>
+                                <p class="text-sm text-gray-600">${item.description || ''}</p>
                             </div>
                         `;
                     });
 
                     section.innerHTML = `
-                        <h2 class="text-3xl font-bold text-brand border-b-2 border-brand pb-2 mb-6">${category}</h2>
-                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            ${cardsHtml}
+                        <div class="flex items-center gap-6 mb-2">
+                            <h2 class="text-3xl font-bold text-brand flex-shrink-0">${category}</h2>
+                            <div class="w-full h-px bg-gray-200"></div>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 divide-y divide-gray-100">
+                            ${itemsHtml}
                         </div>
                     `;
-                    menuContent.appendChild(section);
-                }
+                    return section;
+                };
                 
-                const images = menuContent.querySelectorAll('img');
-                pdfButton.textContent = 'Loading Images...';
-                await preloadImages(images);
-                pdfButton.disabled = false;
-                pdfButton.textContent = 'Generate A4 PDF Menu';
+                page1Categories.forEach(cat => menuPage1.appendChild(renderCategory(cat, menuByCategory[cat])));
+                page2Categories.forEach(cat => menuPage2.appendChild(renderCategory(cat, menuByCategory[cat])));
+                
+                // Add Coming Soon section to the third page
+                menuPage3.innerHTML = `
+                    <section class="menu-category text-center">
+                         <div class="flex items-center gap-6 mb-4">
+                            <h2 class="text-3xl font-bold text-brand flex-shrink-0">Coming Soon</h2>
+                            <div class="w-full h-px bg-gray-200"></div>
+                        </div>
+                        <div class="mt-8">
+                            <h3 class="text-5xl font-bold text-gray-800">Matcha</h3>
+                             <p class="text-gray-500 mt-2">Authentic Japanese green tea delights.</p>
+                        </div>
+                        <div class="my-8 text-2xl font-serif text-gray-400">&</div>
+                        <div class="mb-8">
+                            <h3 class="text-5xl font-bold text-gray-800">Boba Tea</h3>
+                             <p class="text-gray-500 mt-2">Refreshing Taiwanese bubble tea creations.</p>
+                        </div>
+                    </section>
+                `;
 
 
             } catch (error) {
                 console.error("Error fetching menu:", error);
-                loadingMessage.textContent = 'Failed to load menu.';
-                loadingMessage.classList.add('text-red-500');
-                pdfButton.textContent = 'Error';
+                menuPage1.innerHTML = '<p class="text-center text-red-500">Failed to load menu.</p>';
             }
         }
-        
-        const { jsPDF } = window.jspdf;
-        const logoBase64 = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAABQAAAAUACAYAAABTOYkNAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAIGNIUk0AAHolAACAgwAA+f8AAIDpAAB1MAAA6mAAADqYAAAXb5JfxUYAACGoSURBVHic7N17fFzVdQfw3z1/ExIKIV0gIQTy+IRKIZ2QEBJI6A+kIBAKCRUChRAgRAik/gQkEChZSlmKHCmgyEWyFEIRZClSpVxZSlxZynZll3Z32233dnfS7u7udHZ2djqT3f3j+M/5zfzNfWbO3PvuS87znud5ng/Sze6bOWfmzMx73/e97/u+D0KIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIi-iI-prefecthing/iVBORw0-KGgoAAAANSUhEUgAABQAAAAUACAYAAABTOYkNAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAIGNIUk0AAHolAACAgwAA+f8AAIDpAAB1MAAA6mAAADqYAAAXb5JfxUYAACGoSURBVHic7N17fFzVdQfw3z1/ExIKIV0gIQTy+IRKIZ2QEBJI6A+kIBAKCRUChRAgRAik/gQkEChZSlmKHCmgyEWyFEIRZClSpVxZSlxZynZll3Z32233dnfS7u7udHZ2djqT3f3j+M/5zfzNfWbO3PvuS87znud5ng/Sze6bOWfmzMx73/e97/u+D0KIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIi-l-';
 
-        async function generateMenuPDF() {
-            const printButton = document.getElementById('generate-pdf-btn');
-            if (!menuDataForPDF) {
-                alert("Menu data is still loading. Please wait a moment and try again.");
-                return;
-            }
-            
-            printButton.disabled = true;
-            printButton.textContent = 'Generating PDF...';
-
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF('p', 'mm', 'a4');
-            const { sortedCategories, menuByCategory } = menuDataForPDF;
-
-            const pageHeight = doc.internal.pageSize.getHeight();
-            const topMargin = 20;
-            const bottomMargin = 20;
-            const leftMargin = 15;
-            const contentWidth = doc.internal.pageSize.getWidth() - (leftMargin * 2);
-            let y = topMargin;
-            let pageNum = 1;
-
-            const addHeader = (doc) => {
-                doc.addImage(logoBase64, 'PNG', leftMargin, 5, 30, 30);
-                doc.setFontSize(22);
-                doc.setFont(undefined, 'bold');
-                doc.setTextColor('#a43c1a'); // Brand color
-                doc.text('Artevia Palette Menu', doc.internal.pageSize.getWidth() / 2, 20, { align: 'center' });
-                y = 45; // Reset y position after header
-            };
-
-            const addFooter = (doc, pageNum) => {
-                doc.setFontSize(10);
-                doc.setTextColor(150);
-                doc.text(`Page ${pageNum}`, doc.internal.pageSize.getWidth() / 2, pageHeight - 10, { align: 'center' });
-            };
-
-            addHeader(doc);
-
-            for (const category of sortedCategories) {
-                // Check if category header fits
-                if (y + 15 > pageHeight - bottomMargin) {
-                    addFooter(doc, pageNum++);
-                    doc.addPage();
-                    addHeader(doc);
-                }
-
-                doc.setFontSize(18);
-                doc.setFont(undefined, 'bold');
-                doc.setTextColor('#a43c1a');
-                doc.text(category, leftMargin, y);
-                y += 8;
-
-                const sortedItems = menuByCategory[category].sort((a, b) => a.name.localeCompare(b.name));
-
-                for (const item of sortedItems) {
-                    const itemText = `${item.name} - ₹${item.price}`;
-                    const descriptionLines = doc.splitTextToSize(item.description || '', contentWidth);
-                    
-                    // Check if the whole item block fits
-                    if (y + 10 + (descriptionLines.length * 5) > pageHeight - bottomMargin) {
-                        addFooter(doc, pageNum++);
-                        doc.addPage();
-                        addHeader(doc);
-                    }
-                    
-                    doc.setFontSize(12);
-                    doc.setFont(undefined, 'bold');
-                    doc.setTextColor(0);
-                    doc.text(itemText, leftMargin, y);
-                    y += 5;
-
-                    doc.setFontSize(10);
-                    doc.setFont(undefined, 'normal');
-                    doc.setTextColor(100);
-                    doc.text(descriptionLines, leftMargin, y);
-                    y += descriptionLines.length * 5 + 4;
-                }
-            }
-            
-            addFooter(doc, pageNum);
-            doc.save('Artevia-Palette-Menu.pdf');
-
-            printButton.disabled = false;
-            printButton.textContent = 'Generate A4 PDF Menu';
-        }
-
-        signInAnonymously(auth)
-            .then(() => {
-                console.log("Authenticated successfully. Fetching menu...");
-                fetchAndRenderMenu();
-            })
-            .catch(error => {
-                console.error("Authentication failed:", error);
-                document.getElementById('loading-message').textContent = 'Error connecting to the server.';
-            });
-
-        document.getElementById('generate-pdf-btn').addEventListener('click', generateMenuPDF);
+        window.onload = fetchAndRenderMenu;
     </script>
 
 </body>
